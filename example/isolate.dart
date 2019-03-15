@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:isolate';
 
-import 'package:leveldb/leveldb.dart';
+import 'package:rocksdb/rocksdb.dart';
 
 /// This example demonstrates how to access a database from multiple isolates.
 /// Isolates are implemented as os-threads in the dart vm so this allows you to
-/// use multiple cores. Access to the underlying level db from multiple isolates is safe.
+/// use multiple cores. Access to the underlying rocks db from multiple isolates is safe.
 Future<dynamic> main() async {
   // Spawn some isolates. Each of these will write a key then read a key from the next thread.
   List<Runner> runners = new Iterable<int>.generate(5).map((int index) {
@@ -19,8 +19,8 @@ Future<dynamic> main() async {
 Future<Null> run(int index) async {
   // Because shared: true is passed the DB returned by this method will reference the same
   // database.
-  LevelDB<String, String> db =
-      await LevelDB.openUtf8("/tmp/testdb", shared: true);
+  RocksDB<String, String> db =
+      await RocksDB.openUtf8("/tmp/testdb", shared: true);
 
   // Write our key to the db
   print("Thread $index write key $index -> $index");

@@ -1,4 +1,3 @@
-
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,8 +11,8 @@
 #include "include/dart_api.h"
 #include "include/dart_native_api.h"
 
-#include "leveldb/db.h"
-#include "leveldb/filter_policy.h"
+#include "rocksdb/db.h"
+#include "rocksdb/filter_policy.h"
 
 
 const int BLOOM_BITS_PER_KEY = 10;
@@ -24,7 +23,7 @@ Dart_NativeFunction ResolveName(Dart_Handle name,
                                 bool* auto_setup_scope);
 
 
-DART_EXPORT Dart_Handle leveldb_Init(Dart_Handle parent_library) {
+DART_EXPORT Dart_Handle rocksdb_Init(Dart_Handle parent_library) {
   if (Dart_IsError(parent_library)) {
     return parent_library;
   }
@@ -39,7 +38,7 @@ DART_EXPORT Dart_Handle leveldb_Init(Dart_Handle parent_library) {
 }
 
 
-int64_t statusToError(leveldb::Status status) {
+int64_t statusToError(rocksdb::Status status) {
     if (status.IsNotFound()) {
         return -5;
     }
@@ -49,7 +48,7 @@ int64_t statusToError(leveldb::Status status) {
     if (status.IsCorruption()) {
         return -3;
     }
-    // LevelDB does not provide Status::IsInvalidArgument so we just assume all other errors are invalid argument.
+    // RocksDB does not provide Status::IsInvalidArgument so we just assume all other errors are invalid argument.
     if (!status.ok()) {
         return -4;
     }
@@ -58,7 +57,7 @@ int64_t statusToError(leveldb::Status status) {
 
 
 struct DB {
-  leveldb::DB *db;
+  rocksdb::DB *db;
   int64_t refcount;
 
   bool is_shared;
@@ -89,13 +88,13 @@ DBMap sharedDBs;
 void* runOpen(void* ptr) {
     // This function may not take the shared mutex because we take it when joining to this thread.
     DB *native_db = (DB*) ptr;
-    leveldb::Options options;
+    rocksdb::Options options;
     options.create_if_missing = native_db->create_if_missing;
     options.error_if_exists = native_db->error_if_exists;
-    options.block_size = native_db->block_size;
-    options.filter_policy = leveldb::NewBloomFilterPolicy(BLOOM_BITS_PER_KEY);
+    //options.block_size = native_db->block_size;
+    //options.filter_policy = rocksdb::NewBloomFilterPolicy(BLOOM_BITS_PER_KEY);
 
-    leveldb::Status status = leveldb::DB::Open(options, native_db->path, &native_db->db);
+    rocksdb::Status status = rocksdb::DB::Open(options, native_db->path, &native_db->db);
 
     // Notify all ports the new status.
     pthread_mutex_lock(&native_db->mutex);
@@ -220,7 +219,7 @@ struct NativeDB {
 struct NativeIterator {
   NativeDB *native_db;
 
-  leveldb::Iterator *iterator;
+  rocksdb::Iterator *iterator;
   bool is_finalized;
 
   // Iterator params
@@ -262,7 +261,7 @@ static void iteratorFinalize(NativeIterator *it_ref) {
 
 
 /**
- * Finalizer called when the dart LevelDB instance is not reachable.
+ * Finalizer called when the dart RocksDB instance is not reachable.
  * */
 static void NativeDBFinalizer(void* isolate_callback_data, Dart_WeakPersistentHandle handle, void* peer) {
     NativeDB* native_db = (NativeDB*) peer;
@@ -343,18 +342,18 @@ void dbOpen(Dart_NativeArguments arguments) {  // (bool shared, SendPort port, S
 
 // Throw a LevelClosedError. This function does not return.
 void throwClosedException() {
-  Dart_Handle klass = Dart_GetType(Dart_LookupLibrary(Dart_NewStringFromCString("package:leveldb/leveldb.dart")), Dart_NewStringFromCString("LevelClosedError"), 0, NULL);
+  Dart_Handle klass = Dart_GetType(Dart_LookupLibrary(Dart_NewStringFromCString("package:rocksdb/rocksdb.dart")), Dart_NewStringFromCString("LevelClosedError"), 0, NULL);
   Dart_Handle exception = Dart_New(klass, Dart_NewStringFromCString("_internal"), 0, NULL);
   Dart_ThrowException(exception);
 }
 
 
 // If status is not ok then throw an error. This function does not return.
-void maybeThrowStatus(leveldb::Status status) {
+void maybeThrowStatus(rocksdb::Status status) {
   if (status.ok()) {
     return;
   }
-  Dart_Handle library = Dart_LookupLibrary(Dart_NewStringFromCString("package:leveldb/leveldb.dart"));
+  Dart_Handle library = Dart_LookupLibrary(Dart_NewStringFromCString("package:rocksdb/rocksdb.dart"));
   Dart_Handle klass;
   if (status.IsCorruption()) {
     klass = Dart_GetType(library, Dart_NewStringFromCString("LevelCorruptionError"), 0, NULL);
@@ -452,7 +451,7 @@ void syncNext(Dart_NativeArguments arguments) {  // (this)
   Dart_GetNativeInstanceField(arg0, 0, (intptr_t*) &native_iterator);
 
   NativeDB *native_db = native_iterator->native_db;
-  leveldb::Iterator* it = native_iterator->iterator;
+  rocksdb::Iterator* it = native_iterator->iterator;
 
   if (native_db->db == NULL) {
     throwClosedException();
@@ -461,7 +460,7 @@ void syncNext(Dart_NativeArguments arguments) {  // (this)
 
   // If it is NULL we need to create the iterator and perform the initial seek.
   if (!native_iterator->is_finalized && it == NULL) {
-    leveldb::ReadOptions options;
+    rocksdb::ReadOptions options;
     options.fill_cache = native_iterator->is_fill_cache;
     it = native_db->db->db->NewIterator(options);
 
@@ -470,12 +469,12 @@ void syncNext(Dart_NativeArguments arguments) {  // (this)
     native_db->iterators->push_back(native_iterator);
 
     if (native_iterator->gt_len > 0) {
-      leveldb::Slice start_slice = leveldb::Slice((char*)native_iterator->gt, native_iterator->gt_len);
+      rocksdb::Slice start_slice = rocksdb::Slice((char*)native_iterator->gt, native_iterator->gt_len);
       it->Seek(start_slice);
 
       if (!native_iterator->is_gt_closed && it->Valid()) {
       // If we are pointing at start_slice and not inclusive then we need to advance by 1
-      leveldb::Slice key = it->key();
+      rocksdb::Slice key = it->key();
         if (key.compare(start_slice) == 0) {
           it->Next();
         }
@@ -485,13 +484,13 @@ void syncNext(Dart_NativeArguments arguments) {  // (this)
     }
   }
 
-  leveldb::Slice end_slice = leveldb::Slice((char*)native_iterator->lt, native_iterator->lt_len);
+  rocksdb::Slice end_slice = rocksdb::Slice((char*)native_iterator->lt, native_iterator->lt_len);
   bool is_valid = false;
   bool is_limit_reached = native_iterator->limit >= 0 && native_iterator->count >= native_iterator->limit;
   bool is_query_limit_reached = false;
 
-  leveldb::Slice key;
-  leveldb::Slice value;
+  rocksdb::Slice key;
+  rocksdb::Slice value;
   if (!native_iterator->is_finalized) {
     is_valid = it->Valid();
   }
@@ -564,10 +563,10 @@ void syncGet(Dart_NativeArguments arguments) {  // (this, key)
   intptr_t len;
   Dart_TypedDataAcquireData(arg1, &typed_data_type, (void**)&data, &len);
 
-  leveldb::Slice key = leveldb::Slice(data, len);
+  rocksdb::Slice key = rocksdb::Slice(data, len);
 
   std::string value;
-  leveldb::Status status = native_db->db->db->Get(leveldb::ReadOptions(), key, &value);
+  rocksdb::Status status = native_db->db->db->Get(rocksdb::ReadOptions(), key, &value);
   Dart_TypedDataReleaseData(arg1);
 
   Dart_Handle result;
@@ -618,13 +617,13 @@ void syncPut(Dart_NativeArguments arguments) {  // (this, key, value, sync)
   assert(typed_data_type1 == Dart_TypedData_kUint8);
   assert(typed_data_type2 == Dart_TypedData_kUint8);
 
-  leveldb::Slice key = leveldb::Slice(data1, len1);
-  leveldb::Slice value = leveldb::Slice(data2, len2);
+  rocksdb::Slice key = rocksdb::Slice(data1, len1);
+  rocksdb::Slice value = rocksdb::Slice(data2, len2);
 
-  leveldb::WriteOptions options;
+  rocksdb::WriteOptions options;
   options.sync = is_sync;
 
-  leveldb::Status status = native_db->db->db->Put(options, key, value);
+  rocksdb::Status status = native_db->db->db->Put(options, key, value);
   
   Dart_TypedDataReleaseData(arg1);
   Dart_TypedDataReleaseData(arg2);
@@ -656,8 +655,8 @@ void syncDelete(Dart_NativeArguments arguments) {  // (this, key)
   intptr_t len;
   Dart_TypedDataAcquireData(arg1, &typed_data_type, (void**)&data, &len);
 
-  leveldb::Slice key = leveldb::Slice(data, len);
-  leveldb::Status status = native_db->db->db->Delete(leveldb::WriteOptions(), key);
+  rocksdb::Slice key = rocksdb::Slice(data, len);
+  rocksdb::Status status = native_db->db->db->Delete(rocksdb::WriteOptions(), key);
   Dart_TypedDataReleaseData(arg1);
 
   maybeThrowStatus(status);

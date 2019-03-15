@@ -5,44 +5,44 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:leveldb/leveldb.dart';
+import 'package:rocksdb/rocksdb.dart';
 
-Future<LevelDB<String, String>> _openTestDB(
+Future<RocksDB<String, String>> _openTestDB(
     {int index: 0, bool shared: false, bool clean: true}) async {
-  Directory d = new Directory('/tmp/test-level-db-dart-$index');
+  Directory d = new Directory('/tmp/test-rocks-db-dart-$index');
   if (clean && d.existsSync()) {
     await d.delete(recursive: true);
   }
-  return LevelDB.openUtf8('/tmp/test-level-db-dart-$index', shared: shared);
+  return RocksDB.openUtf8('/tmp/test-rocks-db-dart-$index', shared: shared);
 }
 
-Future<LevelDB<K, V>> _openTestDBEnc<K, V>(
+Future<RocksDB<K, V>> _openTestDBEnc<K, V>(
     Codec<K, Uint8List> keyEncoding, Codec<V, Uint8List> valueEncoding,
     {int index: 0, bool shared: false, bool clean: true}) async {
-  Directory d = new Directory('/tmp/test-level-db-dart-$index');
+  Directory d = new Directory('/tmp/test-rocks-db-dart-$index');
   if (clean && d.existsSync()) {
     await d.delete(recursive: true);
   }
-  return LevelDB.open('/tmp/test-level-db-dart-$index',
+  return RocksDB.open('/tmp/test-rocks-db-dart-$index',
       shared: shared, keyEncoding: keyEncoding, valueEncoding: valueEncoding);
 }
 
 const Matcher _isClosedError = const _ClosedMatcher();
 
-class _ClosedMatcher extends TypeMatcher<LevelClosedError> {
+class _ClosedMatcher extends TypeMatcher<RocksClosedError> {
   const _ClosedMatcher();
 }
 
 const Matcher _isInvalidArgumentError = const _InvalidArgumentMatcher();
 
-class _InvalidArgumentMatcher extends TypeMatcher<LevelInvalidArgumentError> {
+class _InvalidArgumentMatcher extends TypeMatcher<RocksInvalidArgumentError> {
   const _InvalidArgumentMatcher();
 }
 
 /// tests
 void main() {
-  test('LevelDB basics', () async {
-    LevelDB<String, String> db = await _openTestDB();
+  test('RocksDB basics', () async {
+    RocksDB<String, String> db = await _openTestDB();
 
     db.put("k1", "v");
     db.put("k2", "v");
@@ -92,10 +92,10 @@ void main() {
 
     db.close();
 
-    LevelDB<Uint8List, Uint8List> db2 =
-        await _openTestDBEnc(LevelDB.identity, LevelDB.identity, clean: false);
+    RocksDB<Uint8List, Uint8List> db2 =
+        await _openTestDBEnc(RocksDB.identity, RocksDB.identity, clean: false);
 
-    // Test with LevelEncodingNone
+    // Test with RocksEncodingNone
     Uint8List key = new Uint8List(2);
     key[0] = "k".codeUnitAt(0);
     key[1] = "1".codeUnitAt(0);
@@ -121,8 +121,8 @@ void main() {
     db2.close();
   });
 
-  test('LevelDB delete', () async {
-    LevelDB<String, String> db = await _openTestDB();
+  test('RocksDB delete', () async {
+    RocksDB<String, String> db = await _openTestDB();
     try {
       db.put("k1", "v");
       db.put("k2", "v");
@@ -137,8 +137,8 @@ void main() {
   });
 
   test('TWO DBS', () async {
-    LevelDB<String, String> db1 = await _openTestDB();
-    LevelDB<String, String> db2 = await _openTestDB(index: 1);
+    RocksDB<String, String> db1 = await _openTestDB();
+    RocksDB<String, String> db2 = await _openTestDB(index: 1);
 
     db1.put("a", "1");
 
@@ -150,7 +150,7 @@ void main() {
   });
 
   test('Usage after close()', () async {
-    LevelDB<String, String> db1 = await _openTestDB();
+    RocksDB<String, String> db1 = await _openTestDB();
     db1.close();
 
     expect(() => db1.get("SOME KEY"), throwsA(_isClosedError));
@@ -159,20 +159,20 @@ void main() {
     expect(() => db1.close(), throwsA(_isClosedError));
 
     try {
-      for (LevelItem<String, String> _ in db1.getItems()) {
+      for (RocksItem<String, String> _ in db1.getItems()) {
         expect(true, equals(false)); // Should not happen.
       }
-    } on LevelClosedError {
+    } on RocksClosedError {
       expect(true, equals(true)); // Should happen.
     }
   });
 
   test('DB locking throws IOError', () async {
-    LevelDB<String, String> db1 = await _openTestDB();
+    RocksDB<String, String> db1 = await _openTestDB();
     try {
       await _openTestDB();
       expect(true, equals(false)); // Should not happen. The db is locked.
-    } on LevelIOError {
+    } on RocksIOError {
       expect(true, equals(true)); // Should happen.
     } finally {
       db1.close();
@@ -180,13 +180,13 @@ void main() {
   });
 
   test('Exception inside iteration', () async {
-    LevelDB<String, String> db1 = await _openTestDB();
+    RocksDB<String, String> db1 = await _openTestDB();
     db1.put("a", "1");
     db1.put("b", "1");
     db1.put("c", "1");
 
     try {
-      for (LevelItem<String, String> _ in db1.getItems()) {
+      for (RocksItem<String, String> _ in db1.getItems()) {
         throw new Exception("OH NO");
       }
     } catch (e) {
@@ -197,13 +197,13 @@ void main() {
   });
 
   test('Test with None encoding', () async {
-    LevelDB<Uint8List, Uint8List> dbNone =
-        await _openTestDBEnc(LevelDB.identity, LevelDB.identity, shared: true);
-    LevelDB<String, String> dbAscii = await _openTestDBEnc(
-        LevelDB.ascii, LevelDB.ascii,
+    RocksDB<Uint8List, Uint8List> dbNone =
+        await _openTestDBEnc(RocksDB.identity, RocksDB.identity, shared: true);
+    RocksDB<String, String> dbAscii = await _openTestDBEnc(
+        RocksDB.ascii, RocksDB.ascii,
         shared: true, clean: false);
-    LevelDB<String, String> dbUtf8 = await _openTestDBEnc(
-        LevelDB.utf8, LevelDB.utf8,
+    RocksDB<String, String> dbUtf8 = await _openTestDBEnc(
+        RocksDB.utf8, RocksDB.utf8,
         shared: true, clean: false);
     Uint8List v = new Uint8List.fromList(utf8.encode("key1"));
     dbNone.put(v, v);
@@ -229,17 +229,17 @@ void main() {
   });
 
   test('Close inside iteration', () async {
-    LevelDB<String, String> db1 = await _openTestDB();
+    RocksDB<String, String> db1 = await _openTestDB();
     db1.put("a", "1");
     db1.put("b", "1");
 
     bool isClosedSeen = false;
 
     try {
-      for (LevelItem<String, String> _ in db1.getItems()) {
+      for (RocksItem<String, String> _ in db1.getItems()) {
         db1.close();
       }
-    } on LevelClosedError catch (_) {
+    } on RocksClosedError catch (_) {
       isClosedSeen = true;
     }
 
@@ -248,35 +248,35 @@ void main() {
 
   test('Test no create if missing', () async {
     expect(
-        LevelDB.openUtf8('/tmp/test-level-db-dart-DOES-NOT-EXIST',
+        RocksDB.openUtf8('/tmp/test-rocks-db-dart-DOES-NOT-EXIST',
             createIfMissing: false),
         throwsA(_isInvalidArgumentError));
   });
 
   test('Test error if exists', () async {
-    LevelDB<String, String> db =
-        await LevelDB.openUtf8('/tmp/test-level-db-dart-exists');
+    RocksDB<String, String> db =
+        await RocksDB.openUtf8('/tmp/test-rocks-db-dart-exists');
     db.close();
     expect(
-        LevelDB.openUtf8('/tmp/test-level-db-dart-exists', errorIfExists: true),
+        RocksDB.openUtf8('/tmp/test-rocks-db-dart-exists', errorIfExists: true),
         throwsA(_isInvalidArgumentError));
   });
 
-  test('LevelDB sync iterator', () async {
-    LevelDB<String, String> db = await _openTestDB();
+  test('RocksDB sync iterator', () async {
+    RocksDB<String, String> db = await _openTestDB();
 
     db.put("k1", "v");
     db.put("k2", "v");
 
     // All keys
-    List<LevelItem<String, String>> items1 = db.getItems().toList();
+    List<RocksItem<String, String>> items1 = db.getItems().toList();
     expect(items1.length, equals(2));
-    expect(items1.map((LevelItem<String, String> i) => i.key).toList(),
+    expect(items1.map((RocksItem<String, String> i) => i.key).toList(),
         equals(<String>["k1", "k2"]));
-    expect(items1.map((LevelItem<String, String> i) => i.value).toList(),
+    expect(items1.map((RocksItem<String, String> i) => i.value).toList(),
         equals(<String>["v", "v"]));
 
-    List<LevelItem<String, String>> items = db.getItems(gte: "k1").toList();
+    List<RocksItem<String, String>> items = db.getItems(gte: "k1").toList();
     expect(items.length, equals(2));
     items = db.getItems(gt: "k1").toList();
     expect(items.length, equals(1));
@@ -312,7 +312,7 @@ void main() {
     String val =
         "bv-12345678901234567890123456789012345678901234567890123456789012345678901234567890";
     db.put("a", val);
-    LevelItem<String, String> item = db.getItems(lte: "a").first;
+    RocksItem<String, String> item = db.getItems(lte: "a").first;
     expect(item.value.length, val.length);
 
     String longKey = "";
@@ -326,14 +326,14 @@ void main() {
     db.close();
   });
 
-  test('LevelDB sync iterator use after close', () async {
-    LevelDB<String, String> db = await _openTestDB();
+  test('RocksDB sync iterator use after close', () async {
+    RocksDB<String, String> db = await _openTestDB();
 
     db.put("k1", "v");
     db.put("k2", "v");
 
     // All keys
-    Iterator<LevelItem<String, String>> it = db.getItems().iterator;
+    Iterator<RocksItem<String, String>> it = db.getItems().iterator;
     it.moveNext();
 
     db.close();
@@ -341,11 +341,11 @@ void main() {
     expect(() => it.moveNext(), throwsA(_isClosedError));
   });
 
-  test('LevelDB sync iterator current == null', () async {
-    LevelDB<String, String> db = await _openTestDB();
+  test('RocksDB sync iterator current == null', () async {
+    RocksDB<String, String> db = await _openTestDB();
 
     db.put("k1", "v");
-    LevelIterator<String, String> it = db.getItems().iterator;
+    RocksIterator<String, String> it = db.getItems().iterator;
     expect(it.current, null);
     expect(it.currentKey, null);
     expect(it.currentValue, null);
@@ -367,8 +367,8 @@ void main() {
   });
 
   test('Shared db in same isolate', () async {
-    LevelDB<String, String> db = await _openTestDB(shared: true);
-    LevelDB<String, String> db1 = await _openTestDB(shared: true);
+    RocksDB<String, String> db = await _openTestDB(shared: true);
+    RocksDB<String, String> db1 = await _openTestDB(shared: true);
 
     db.put("k1", "v");
     expect(db1.get("k1"), "v");
@@ -388,12 +388,12 @@ void main() {
 
   test('Shared db removed from map', () async {
     // Test that a shared db is correctly removed from the shared map when closed.
-    LevelDB<String, String> db = await _openTestDB(shared: true);
+    RocksDB<String, String> db = await _openTestDB(shared: true);
     db.close();
 
     // Since the db is closed above it will be remove from the shared map and therefore
     // this will open a new db and we are allowed to read/write keys.
-    LevelDB<String, String> db1 = await _openTestDB(shared: true);
+    RocksDB<String, String> db1 = await _openTestDB(shared: true);
     db1.put("k1", "v");
     expect(db1.get("k1"), "v");
   });
@@ -422,9 +422,9 @@ void main() {
 // Must be a top-level because this function runs in another isolate.
 Future<Null> _isolateTest(int v) async {
   for (int _ in new Iterable<int>.generate(1000)) {
-    LevelDB<String, String> db = await _openTestDB(shared: true, clean: false);
+    RocksDB<String, String> db = await _openTestDB(shared: true, clean: false);
     // Allocate an iterator.
-    for (LevelItem<String, String> _ in db.getItems(limit: 2)) {
+    for (RocksItem<String, String> _ in db.getItems(limit: 2)) {
       // pass
     }
     db.close();

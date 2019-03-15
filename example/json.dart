@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:leveldb/leveldb.dart';
+import 'package:rocksdb/rocksdb.dart';
 import 'dart:convert';
 
 /// Example of using a JSON codec
@@ -17,8 +17,8 @@ Future<dynamic> main() async {
       const JsonCodec().fuse(const Utf8Codec()).fuse(const Uint8ListCodec());
 
   // Create a DB using this codec
-  LevelDB<String, Object> db = await LevelDB.open<String, Object>("/tmp/testdb",
-      keyEncoding: LevelDB.utf8, valueEncoding: valueCodec);
+  RocksDB<String, Object> db = await RocksDB.open<String, Object>("/tmp/testdb",
+      keyEncoding: RocksDB.utf8, valueEncoding: valueCodec);
 
   // The objects we store must follow the JSON rules (only string keys in maps) etc...
   Object object1 = <Object>[
