@@ -30,3 +30,5 @@ pubspec.lock
 .vscode/
 *.iml
 dart-sdk/
+.dart_tool/
+lib/librocksdb*
