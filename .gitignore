@@ -29,6 +29,6 @@ pubspec.lock
 .idea/
 .vscode/
 *.iml
-dart-sdk/
+dart-sdk
 .dart_tool/
 lib/librocksdb*
