@@ -15,7 +15,7 @@
 #include "rocksdb/filter_policy.h"
 
 
-const int BLOOM_BITS_PER_KEY = 10;
+// const int BLOOM_BITS_PER_KEY = 10;
 
 
 Dart_NativeFunction ResolveName(Dart_Handle name,
