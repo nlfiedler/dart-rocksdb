@@ -340,9 +340,9 @@ void dbOpen(Dart_NativeArguments arguments) {  // (bool shared, SendPort port, S
 // SYNC API
 
 
-// Throw a LevelClosedError. This function does not return.
+// Throw a RocksClosedError. This function does not return.
 void throwClosedException() {
-  Dart_Handle klass = Dart_GetType(Dart_LookupLibrary(Dart_NewStringFromCString("package:rocksdb/rocksdb.dart")), Dart_NewStringFromCString("LevelClosedError"), 0, NULL);
+  Dart_Handle klass = Dart_GetType(Dart_LookupLibrary(Dart_NewStringFromCString("package:rocksdb/rocksdb.dart")), Dart_NewStringFromCString("RocksClosedError"), 0, NULL);
   Dart_Handle exception = Dart_New(klass, Dart_NewStringFromCString("_internal"), 0, NULL);
   Dart_ThrowException(exception);
 }
@@ -356,9 +356,9 @@ void maybeThrowStatus(rocksdb::Status status) {
   Dart_Handle library = Dart_LookupLibrary(Dart_NewStringFromCString("package:rocksdb/rocksdb.dart"));
   Dart_Handle klass;
   if (status.IsCorruption()) {
-    klass = Dart_GetType(library, Dart_NewStringFromCString("LevelCorruptionError"), 0, NULL);
+    klass = Dart_GetType(library, Dart_NewStringFromCString("RocksCorruptionError"), 0, NULL);
   } else {
-    klass = Dart_GetType(library, Dart_NewStringFromCString("LevelIOError"), 0, NULL);
+    klass = Dart_GetType(library, Dart_NewStringFromCString("RocksIOError"), 0, NULL);
   }
   Dart_Handle exception = Dart_New(klass, Dart_NewStringFromCString("_internal"), 0, NULL);
   Dart_ThrowException(exception);
