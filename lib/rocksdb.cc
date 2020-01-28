@@ -8,8 +8,8 @@
 #include <map>
 #include <cstring>
 
-#include "include/dart_api.h"
-#include "include/dart_native_api.h"
+#include "dart_api.h"
+#include "dart_native_api.h"
 
 #include "rocksdb/db.h"
 #include "rocksdb/filter_policy.h"
