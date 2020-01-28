@@ -1,91 +1,60 @@
-*Fast & simple storage - a Dart LevelDB wrapper*
+# dart-rocksdb
 
-<img alt="LevelDB Logo" height="100" src="http://leveldb.org/img/logo.svg">
+## Overview
 
-<img alt="Build Status" src="https://travis-ci.org/adamlofts/leveldb_dart.svg?branch=master">
+This [Dart](https://dart.dev) package is a wrapper for the [RocksDB](https://rocksdb.org) library. RocksDB is an embeddable persistent key-value store for fast storage. This package aims to expose the RocksDB API in a Dart-friendly fashion.
 
-Introduction
-------------
+## Platform Support
 
-**[LevelDB](https://github.com/google/leveldb)** is a simple key/value data store built by Google, inspired by BigTable. It's used in Google
-Chrome and many other products. LevelDB supports arbitrary byte arrays as both keys and values, singular *get*, *put* and *delete*
-operations, *batched put and delete*, bi-directional iterators and simple compression using the very fast
-[Snappy](http://google.github.io/snappy/) algorithm.
+- [ ] Android
+- [ ] iOS
+- [ ] JavaScript
+- [ ] Modern 64-bit Linux
+- [x] macOS
+- [ ] Windows
 
-**leveldb_dart** aims to expose the features of LevelDB in a **Dart-friendly way**.
+## Basic Usage
 
-LevelDB stores entries **sorted lexicographically by keys**. This makes [LevelDB.getItems](https://www.dartdocs.org/documentation/leveldb/latest/leveldb/LevelDB/getItems.html) a very powerful query mechanism.
+Add `rocksdb` to the `dependencies` in the `pubspec.yaml` file and run `pub get`.
 
-Platform Support
-----------------
+Check out `example/main.dart` to see how to read, write, and iterate over keys and values.
 
-- [x] Modern 64-bit Linux platforms (e.g. Fedora 25, 26, Ubuntu 14.04, 15.10)
-- [x] Mac OS X
+## Build and Test
 
-Unsupported platforms:
+These steps are for working on the dart-rocksdb package itself. Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md).
 
-- [ ] Android (See [issue #12](https://github.com/adamlofts/leveldb_dart/issues/12))
-- [ ] Windows (Not supported in base library [issue #466](https://github.com/google/leveldb/issues/466))
-
-Basic usage
------------
-
-Add `leveldb` to your `pubspec.yaml` file.
-
-```
-name: myproject
-dependencies:
-  leveldb:
+```shell
+$ git submodule update --init
+$ cd rocksdb
+$ make static_lib
+$ cd ..
+$ make clean && make
+$ pub run test
 ```
 
-Open a database and read/write some keys and values..
+### macOS
 
+On recent releases of macOS, it may be necessary to remove the code signature from the `dart` binary, otherwise the OS will prohibit linking with unsigned libraries, like the one build by this package.
+
+```shell
+$ codesign --remove-signature /usr/local/bin/dart
 ```
-import 'dart:async';
-import 'package:leveldb/leveldb.dart';
 
-Future main() async {
-  LevelDB<String, String> db = await LevelDB.openUtf8("/tmp/testdb");
-  db.put("abc", "def");
-  String value = db.get("abc");
-  print("value is $value"); // value2 is def
-}
-```
-Check out [example/main.dart](https://github.com/adamlofts/leveldb_dart/blob/master/example/main.dart) to see how to read, write and iterate over keys and values.
+## Feature Support
 
-Documentation
--------------
-
-API Documentation is available at https://www.dartdocs.org/documentation/leveldb/latest/
-
-Isolates (Threads)
-------------------
-
-*leveldb_dart* supports access to a database from multiple isolates by passing
-`shared: true` to the
-[LevelDB.open](https://www.dartdocs.org/documentation/leveldb/latest/leveldb/LevelDB/open.html) function. The `LevelDB` object
-returned by this function will share an underlying reference to the object in other isolates and changes will
-be visible between isolates.
-
-See [example/isolate.dart](https://github.com/adamlofts/leveldb_dart/blob/master/example/isolate.dart) for an example of using a database from multiple isolates (OS threads).
-
-
-Feature Support
----------------
-
-- [x] Read and write keys
-- [x] Forward iteration
-- [x] Multi-isolate
+- [ ] Read and write keys
+- [ ] Forward iteration
+- [ ] Multi-isolate
 - [ ] Backward iteration
 - [ ] Snapshots
 - [ ] Bulk get / put
 
+## Contributing
 
-Custom Encoding and Decoding
-----------------------------
+Feedback and pull requests are welcome.
 
-By default you can use `LevelDB.openUtf8` to open a database with `String` keys and values which are encoded in UTF8. The `dart:codec` library 
-can be used to create databases with custom encodings. See [example/json.dart](https://github.com/adamlofts/leveldb_dart/blob/master/example/json.dart) 
-for an example which stores dart objects to the database via JSON encoding.
+## History
 
+This package was originally created by Adam Lofts as a wrapper for [LevelDB](https://github.com/google/leveldb/).
 
+Later Logan Gorence converted the code to link with RocksDB.
