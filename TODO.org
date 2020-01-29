@@ -11,18 +11,14 @@
 **** why build static lib versus shared lib?
 **** is =-D_GLIBCXX_USE_CXX11_ABI= compiler flag really needed?
 *** TODO test the build on CentOS Linux
-*** TODO examples all write to the same test database path
-*** TODO fix the inconsistent indentation of the C++ code
-**** =brew install clang-format=
-**** install VS Code clang-format module
-*** TODO fix all of the linter warnings in the Dart code
-**** including the examples
 *** TODO try using =build_native= to build rocksdb
 **** Linux requires different compiler flags
 *** TODO do like =rust-rocksdb= and include the compression libs as submodules
 *** TODO look for ways to build the native parts automatically
 **** maybe something like node-gyp and/or node-pre-gyp
-*** TODO make the examples easy to run, maybe need their own directory and =pubspec.yaml=
+*** TODO ensure adequate API documentation
+*** TODO unit tests should clean up after themselves
+*** TODO examples should clean up after themselves
 *** TODO introduce a =CHANGELOG.md=
 ** Long Term
 *** TODO add support for backward iteration

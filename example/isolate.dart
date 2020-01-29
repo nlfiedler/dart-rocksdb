@@ -8,8 +8,8 @@ import 'package:rocksdb/rocksdb.dart';
 /// use multiple cores. Access to the underlying rocks db from multiple isolates is safe.
 Future<dynamic> main() async {
   // Spawn some isolates. Each of these will write a key then read a key from the next thread.
-  List<Runner> runners = new Iterable<int>.generate(5).map((int index) {
-    return new Runner.spawn(index);
+  var runners = Iterable<int>.generate(5).map((int index) {
+    return Runner.spawn(index);
   }).toList();
 
   await Future.wait(runners.map((Runner r) => r.finish));
@@ -19,25 +19,24 @@ Future<dynamic> main() async {
 Future<Null> run(int index) async {
   // Because shared: true is passed the DB returned by this method will reference the same
   // database.
-  RocksDB<String, String> db =
-      await RocksDB.openUtf8("/tmp/testdb", shared: true);
+  var db = await RocksDB.openUtf8('/tmp/testdb/isolate', shared: true);
 
   // Write our key to the db
-  print("Thread $index write key $index -> $index");
-  db.put("$index", "$index");
+  print('Thread $index write key $index -> $index');
+  db.put('$index', '$index');
 
   // Sleep 1 second
-  await new Future<Null>.delayed(const Duration(seconds: 1));
+  await Future<Null>.delayed(const Duration(seconds: 1));
 
   // Now read the key from the next thread
-  String nextKey = "${(index + 1) % 5}";
-  print("Thread $index read key $nextKey -> ${db.get(nextKey)}");
+  var nextKey = '${(index + 1) % 5}';
+  print('Thread $index read key $nextKey -> ${db.get(nextKey)}');
 }
 
 /// Helper class to run an isolate and wait for it to finish.
 class Runner {
-  final Completer<Null> _finish = new Completer<Null>();
-  final RawReceivePort _finishPort = new RawReceivePort();
+  final Completer<Null> _finish = Completer<Null>();
+  final RawReceivePort _finishPort = RawReceivePort();
 
   /// Run an isolate.
   Runner.spawn(int index) {

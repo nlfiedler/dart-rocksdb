@@ -1,6 +1,7 @@
+//
 // Copyright (c) 2016 Adam Lofts
 // Copyright (c) 2019 Logan Gorence
-
+//
 library rocksdb;
 
 import 'dart:convert' as convert;
@@ -24,29 +25,29 @@ abstract class RocksError implements Exception {
 
 /// Exception thrown if the database is used after it has been closed.
 class RocksClosedError extends RocksError {
-  const RocksClosedError._internal() : super._internal("DB already closed");
+  const RocksClosedError._internal() : super._internal('DB already closed');
 }
 
 /// Exception thrown if a general IO error is encountered.
 class RocksIOError extends RocksError {
-  const RocksIOError._internal() : super._internal("IOError");
+  const RocksIOError._internal() : super._internal('IOError');
 }
 
 /// Exception thrown if the db is corrupted
 class RocksCorruptionError extends RocksError {
-  const RocksCorruptionError._internal() : super._internal("Corruption error");
+  const RocksCorruptionError._internal() : super._internal('Corruption error');
 }
 
 /// Exception thrown if invalid argument (e.g. if the database does not exist and createIfMissing is false)
 class RocksInvalidArgumentError extends RocksError {
   const RocksInvalidArgumentError._internal()
-      : super._internal("Invalid argument");
+      : super._internal('Invalid argument');
 }
 
 class _Uint8ListEncoder extends convert.Converter<List<int>, Uint8List> {
   const _Uint8ListEncoder();
   @override
-  Uint8List convert(List<int> input) => new Uint8List.fromList(input);
+  Uint8List convert(List<int> input) => Uint8List.fromList(input);
 }
 
 class _Uint8ListDecoder extends convert.Converter<Uint8List, List<int>> {
@@ -91,12 +92,12 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   RocksDB._internal(this._keyEncoding, this._valueEncoding);
 
   void _open(bool shared, SendPort port, String path, int blockSize,
-      bool createIfMissing, bool errorIfExists) native "DB_Open";
+      bool createIfMissing, bool errorIfExists) native 'DB_Open';
 
-  Uint8List _syncGet(Uint8List key) native "SyncGet";
-  void _syncPut(Uint8List key, Uint8List value, bool sync) native "SyncPut";
-  void _syncDelete(Uint8List key) native "SyncDelete";
-  void _syncClose() native "SyncClose";
+  Uint8List _syncGet(Uint8List key) native 'SyncGet';
+  void _syncPut(Uint8List key, Uint8List value, bool sync) native 'SyncPut';
+  void _syncDelete(Uint8List key) native 'SyncDelete';
+  void _syncClose() native 'SyncClose';
 
   static RocksError _getError(dynamic reply) {
     if (reply == -1) {
@@ -115,7 +116,7 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   }
 
   static bool _completeError(Completer<dynamic> completer, dynamic reply) {
-    RocksError e = _getError(reply);
+    var e = _getError(reply);
     if (e != null) {
       completer.completeError(e);
       return true;
@@ -142,10 +143,10 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   ///
   /// See [open] for information on optional parameters.
   static Future<RocksDB<String, String>> openUtf8(String path,
-          {bool shared: false,
-          int blockSize: 4096,
-          bool createIfMissing: true,
-          bool errorIfExists: false}) =>
+          {bool shared = false,
+          int blockSize = 4096,
+          bool createIfMissing = true,
+          bool errorIfExists = false}) =>
       open<String, String>(
         path,
         shared: shared,
@@ -160,10 +161,10 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   ///
   /// See [open] for information on optional parameters.
   static Future<RocksDB<Uint8List, Uint8List>> openUint8List(String path,
-          {bool shared: false,
-          int blockSize: 4096,
-          bool createIfMissing: true,
-          bool errorIfExists: false}) =>
+          {bool shared = false,
+          int blockSize = 4096,
+          bool createIfMissing = true,
+          bool errorIfExists = false}) =>
       open<Uint8List, Uint8List>(path,
           keyEncoding: identity,
           valueEncoding: identity,
@@ -182,17 +183,17 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   /// be used to encoding and decode keys or values respectively. The encodings must match the generic
   /// type of the database.
   static Future<RocksDB<K, V>> open<K, V>(String path,
-      {bool shared: false,
-      int blockSize: 4096,
-      bool createIfMissing: true,
-      bool errorIfExists: false,
+      {bool shared = false,
+      int blockSize = 4096,
+      bool createIfMissing = true,
+      bool errorIfExists = false,
       @required convert.Codec<K, Uint8List> keyEncoding,
       @required convert.Codec<V, Uint8List> valueEncoding}) {
     assert(keyEncoding != null);
     assert(valueEncoding != null);
-    Completer<RocksDB<K, V>> completer = new Completer<RocksDB<K, V>>();
-    RawReceivePort replyPort = new RawReceivePort();
-    RocksDB<K, V> db = new RocksDB<K, V>._internal(keyEncoding, valueEncoding);
+    var completer = Completer<RocksDB<K, V>>();
+    var replyPort = RawReceivePort();
+    var db = RocksDB<K, V>._internal(keyEncoding, valueEncoding);
     replyPort.handler = (dynamic result) {
       replyPort.close();
       if (_completeError(completer, result)) {
@@ -213,8 +214,8 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
 
   /// Get a key in the database. Returns null if the key is not found.
   V get(K key) {
-    Uint8List keyEnc = _keyEncoding.encode(key);
-    Uint8List value = _syncGet(keyEnc);
+    var keyEnc = _keyEncoding.encode(key);
+    var value = _syncGet(keyEnc);
     V ret;
     if (value != null) {
       ret = _valueEncoding.decode(value);
@@ -223,15 +224,15 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   }
 
   /// Set a key to a value.
-  void put(K key, V value, {bool sync: false}) {
-    Uint8List keyEnc = _keyEncoding.encode(key);
-    Uint8List valueEnc = _valueEncoding.encode(value);
+  void put(K key, V value, {bool sync = false}) {
+    var keyEnc = _keyEncoding.encode(key);
+    var valueEnc = _valueEncoding.encode(value);
     _syncPut(keyEnc, valueEnc, sync);
   }
 
   /// Remove a key from the database
   void delete(K key) {
-    Uint8List keyEnc = _keyEncoding.encode(key);
+    var keyEnc = _keyEncoding.encode(key);
     _syncDelete(keyEnc);
   }
 
@@ -249,9 +250,9 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   ///     getItems(gte: 'b', lt: 'd')
   ///
   RocksIterable<K, V> getItems(
-      {K gt, K gte, K lt, K lte, int limit: -1, bool fillCache: true}) {
-    return new RocksIterable<K, V>._internal(this, limit, fillCache,
-        gt == null ? gte : gt, gt == null, lt == null ? lte : lt, lt == null);
+      {K gt, K gte, K lt, K lte, int limit = -1, bool fillCache = true}) {
+    return RocksIterable<K, V>._internal(
+        this, limit, fillCache, gt ?? gte, gt == null, lt ?? lte, lt == null);
   }
 }
 
@@ -276,27 +277,27 @@ class RocksIterator<K, V> extends NativeFieldWrapperClass2
         _valueEncoding = it._db._valueEncoding;
 
   int _init(RocksDB<K, V> db, int limit, bool fillCache, Uint8List gt,
-      bool isGtClosed, Uint8List lt, bool isLtClosed) native "SyncIterator_New";
-  Uint8List _next() native "SyncIterator_Next";
+      bool isGtClosed, Uint8List lt, bool isLtClosed) native 'SyncIterator_New';
+  Uint8List _next() native 'SyncIterator_Next';
   Uint8List _current;
 
   /// The key of the current RocksItem
   K get currentKey => _current == null
       ? null
-      : _keyEncoding.decode(new Uint8List.view(
-          _current.buffer, 4, (_current[1] << 8) + _current[0]));
+      : _keyEncoding.decode(
+          Uint8List.view(_current.buffer, 4, (_current[1] << 8) + _current[0]));
 
   /// The value of the current RocksItem
   V get currentValue => _current == null
       ? null
-      : _valueEncoding.decode(new Uint8List.view(
+      : _valueEncoding.decode(Uint8List.view(
           _current.buffer, 4 + (_current[3] << 8) + _current[2]));
 
   @override
   RocksItem<K, V> get current {
     return _current == null
         ? null
-        : new RocksItem<K, V>._internal(currentKey, currentValue);
+        : RocksItem<K, V>._internal(currentKey, currentValue);
   }
 
   @override
@@ -336,7 +337,7 @@ class RocksIterable<K, V> extends IterableBase<RocksItem<K, V>> {
 
   @override
   RocksIterator<K, V> get iterator {
-    RocksIterator<K, V> ret = new RocksIterator<K, V>._internal(this);
+    var ret = RocksIterator<K, V>._internal(this);
     Uint8List ltEncoded;
     if (_lt != null) {
       ltEncoded = _db._keyEncoding.encode(_lt);
@@ -353,7 +354,7 @@ class RocksIterable<K, V> extends IterableBase<RocksItem<K, V>> {
 
   /// Returns an [Iterable] of the keys in the db
   Iterable<K> get keys sync* {
-    RocksIterator<K, V> it = iterator;
+    var it = iterator;
     while (it.moveNext()) {
       yield it.currentKey;
     }
@@ -361,7 +362,7 @@ class RocksIterable<K, V> extends IterableBase<RocksItem<K, V>> {
 
   /// Returns an [Iterable] of the values in the db
   Iterable<V> get values sync* {
-    RocksIterator<K, V> it = iterator;
+    var it = iterator;
     while (it.moveNext()) {
       yield it.currentValue;
     }

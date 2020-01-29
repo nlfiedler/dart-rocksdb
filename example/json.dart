@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:rocksdb/rocksdb.dart';
 import 'dart:convert';
@@ -13,11 +12,11 @@ import 'dart:convert';
 Future<dynamic> main() async {
   // Create a codec which encodes
   //   dart object -> JSON -> utf8 -> Uint8List
-  Codec<Object, Uint8List> valueCodec =
+  var valueCodec =
       const JsonCodec().fuse(const Utf8Codec()).fuse(const Uint8ListCodec());
 
   // Create a DB using this codec
-  RocksDB<String, Object> db = await RocksDB.open<String, Object>("/tmp/testdb",
+  var db = await RocksDB.open<String, Object>('/tmp/testdb/json',
       keyEncoding: RocksDB.utf8, valueEncoding: valueCodec);
 
   // The objects we store must follow the JSON rules (only string keys in maps) etc...
@@ -25,18 +24,18 @@ Future<dynamic> main() async {
     <String, String>{'some': 'value'},
     2
   ];
-  Object object2 = <Object, Object>{"a": 5, "b": 10, "c": "Hey"};
+  Object object2 = <Object, Object>{'a': 5, 'b': 10, 'c': 'Hey'};
 
   // Add an objects to the db
-  db.put("hello", object1);
-  db.put("world", object2);
+  db.put('hello', object1);
+  db.put('world', object2);
 
   // Print the values in the database. Iteration is in key order.
-  for (String key in db.getItems().keys) {
-    print("Key: $key");
+  for (var key in db.getItems().keys) {
+    print('Key: $key');
   }
-  for (Object value in db.getItems().values) {
-    print("Value: $value");
+  for (var value in db.getItems().values) {
+    print('Value: $value');
   }
   db.close();
 }

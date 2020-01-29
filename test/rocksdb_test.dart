@@ -8,32 +8,32 @@ import 'package:test/test.dart';
 import 'package:rocksdb/rocksdb.dart';
 
 Future<RocksDB<String, String>> _openTestDB(
-    {int index: 0, bool shared: false, bool clean: true}) async {
-  Directory d = new Directory('/tmp/test-rocks-db-dart-$index');
+    {int index = 0, bool shared = false, bool clean = true}) async {
+  var d = Directory('/tmp/testdb-dart-rocksdb-$index');
   if (clean && d.existsSync()) {
     await d.delete(recursive: true);
   }
-  return RocksDB.openUtf8('/tmp/test-rocks-db-dart-$index', shared: shared);
+  return RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-$index', shared: shared);
 }
 
 Future<RocksDB<K, V>> _openTestDBEnc<K, V>(
     Codec<K, Uint8List> keyEncoding, Codec<V, Uint8List> valueEncoding,
-    {int index: 0, bool shared: false, bool clean: true}) async {
-  Directory d = new Directory('/tmp/test-rocks-db-dart-$index');
+    {int index = 0, bool shared = false, bool clean = true}) async {
+  var d = Directory('/tmp/testdb-dart-rocksdb-$index');
   if (clean && d.existsSync()) {
     await d.delete(recursive: true);
   }
-  return RocksDB.open('/tmp/test-rocks-db-dart-$index',
+  return RocksDB.open('/tmp/testdb-dart-rocksdb-$index',
       shared: shared, keyEncoding: keyEncoding, valueEncoding: valueEncoding);
 }
 
-const Matcher _isClosedError = const _ClosedMatcher();
+const Matcher _isClosedError = _ClosedMatcher();
 
 class _ClosedMatcher extends TypeMatcher<RocksClosedError> {
   const _ClosedMatcher();
 }
 
-const Matcher _isInvalidArgumentError = const _InvalidArgumentMatcher();
+const Matcher _isInvalidArgumentError = _InvalidArgumentMatcher();
 
 class _InvalidArgumentMatcher extends TypeMatcher<RocksInvalidArgumentError> {
   const _InvalidArgumentMatcher();
@@ -42,70 +42,70 @@ class _InvalidArgumentMatcher extends TypeMatcher<RocksInvalidArgumentError> {
 /// tests
 void main() {
   test('RocksDB basics', () async {
-    RocksDB<String, String> db = await _openTestDB();
+    var db = await _openTestDB();
 
-    db.put("k1", "v");
-    db.put("k2", "v");
+    db.put('k1', 'v');
+    db.put('k2', 'v');
 
-    expect(db.get("k1"), equals("v"));
+    expect(db.get('k1'), equals('v'));
     List<dynamic> keys = db.getItems().keys.toList();
-    expect(keys.first, equals("k1"));
+    expect(keys.first, equals('k1'));
 
-    String v = db.get("DOESNOTEXIST");
+    var v = db.get('DOESNOTEXIST');
     expect(v, equals(null));
 
     // All keys
     keys = db.getItems().keys.toList();
     expect(keys.length, equals(2));
-    keys = db.getItems(gte: "k1").keys.toList();
+    keys = db.getItems(gte: 'k1').keys.toList();
     expect(keys.length, equals(2));
-    keys = db.getItems(gt: "k1").keys.toList();
+    keys = db.getItems(gt: 'k1').keys.toList();
     expect(keys.length, equals(1));
 
-    keys = db.getItems(gt: "k0").keys.toList();
+    keys = db.getItems(gt: 'k0').keys.toList();
     expect(keys.length, equals(2));
 
-    keys = db.getItems(gt: "k5").keys.toList();
+    keys = db.getItems(gt: 'k5').keys.toList();
     expect(keys.length, equals(0));
-    keys = db.getItems(gte: "k5").keys.toList();
+    keys = db.getItems(gte: 'k5').keys.toList();
     expect(keys.length, equals(0));
 
     keys = db.getItems(limit: 1).keys.toList();
     expect(keys.length, equals(1));
 
-    keys = db.getItems(lte: "k2").keys.toList();
+    keys = db.getItems(lte: 'k2').keys.toList();
     expect(keys.length, equals(2));
-    keys = db.getItems(lt: "k2").keys.toList();
+    keys = db.getItems(lt: 'k2').keys.toList();
     expect(keys.length, equals(1));
 
-    keys = db.getItems(gt: "k1", lt: "k2").keys.toList();
+    keys = db.getItems(gt: 'k1', lt: 'k2').keys.toList();
     expect(keys.length, equals(0));
 
-    keys = db.getItems(gte: "k1", lt: "k2").keys.toList();
+    keys = db.getItems(gte: 'k1', lt: 'k2').keys.toList();
     expect(keys.length, equals(1));
 
-    keys = db.getItems(gt: "k1", lte: "k2").keys.toList();
+    keys = db.getItems(gt: 'k1', lte: 'k2').keys.toList();
     expect(keys.length, equals(1));
 
-    keys = db.getItems(gte: "k1", lte: "k2").keys.toList();
+    keys = db.getItems(gte: 'k1', lte: 'k2').keys.toList();
     expect(keys.length, equals(2));
 
     db.close();
 
-    RocksDB<Uint8List, Uint8List> db2 =
+    var db2 =
         await _openTestDBEnc(RocksDB.identity, RocksDB.identity, clean: false);
 
     // Test with RocksEncodingNone
-    Uint8List key = new Uint8List(2);
-    key[0] = "k".codeUnitAt(0);
-    key[1] = "1".codeUnitAt(0);
+    var key = Uint8List(2);
+    key[0] = 'k'.codeUnitAt(0);
+    key[1] = '1'.codeUnitAt(0);
     keys = db2.getItems(gt: key).keys.toList();
     expect(keys.length, equals(1));
 
     keys = db2.getItems(gte: key).keys.toList();
     expect(keys.length, equals(2));
 
-    key[1] = "2".codeUnitAt(0);
+    key[1] = '2'.codeUnitAt(0);
     keys = db2.getItems(gt: key).keys.toList();
     expect(keys.length, equals(0));
 
@@ -122,14 +122,14 @@ void main() {
   });
 
   test('RocksDB delete', () async {
-    RocksDB<String, String> db = await _openTestDB();
+    var db = await _openTestDB();
     try {
-      db.put("k1", "v");
-      db.put("k2", "v");
+      db.put('k1', 'v');
+      db.put('k2', 'v');
 
-      db.delete("k1");
+      db.delete('k1');
 
-      expect(db.get("k1"), equals(null));
+      expect(db.get('k1'), equals(null));
       expect(db.getItems().length, 1);
     } finally {
       db.close();
@@ -137,12 +137,12 @@ void main() {
   });
 
   test('TWO DBS', () async {
-    RocksDB<String, String> db1 = await _openTestDB();
-    RocksDB<String, String> db2 = await _openTestDB(index: 1);
+    var db1 = await _openTestDB();
+    var db2 = await _openTestDB(index: 1);
 
-    db1.put("a", "1");
+    db1.put('a', '1');
 
-    String v = db2.get("a");
+    var v = db2.get('a');
     expect(v, equals(null));
 
     db1.close();
@@ -150,16 +150,16 @@ void main() {
   });
 
   test('Usage after close()', () async {
-    RocksDB<String, String> db1 = await _openTestDB();
+    var db1 = await _openTestDB();
     db1.close();
 
-    expect(() => db1.get("SOME KEY"), throwsA(_isClosedError));
-    expect(() => db1.delete("SOME KEY"), throwsA(_isClosedError));
-    expect(() => db1.put("SOME KEY", "SOME KEY"), throwsA(_isClosedError));
+    expect(() => db1.get('SOME KEY'), throwsA(_isClosedError));
+    expect(() => db1.delete('SOME KEY'), throwsA(_isClosedError));
+    expect(() => db1.put('SOME KEY', 'SOME KEY'), throwsA(_isClosedError));
     expect(() => db1.close(), throwsA(_isClosedError));
 
     try {
-      for (RocksItem<String, String> _ in db1.getItems()) {
+      for (var _ in db1.getItems()) {
         expect(true, equals(false)); // Should not happen.
       }
     } on RocksClosedError {
@@ -168,7 +168,7 @@ void main() {
   });
 
   test('DB locking throws IOError', () async {
-    RocksDB<String, String> db1 = await _openTestDB();
+    var db1 = await _openTestDB();
     try {
       await _openTestDB();
       expect(true, equals(false)); // Should not happen. The db is locked.
@@ -180,14 +180,14 @@ void main() {
   });
 
   test('Exception inside iteration', () async {
-    RocksDB<String, String> db1 = await _openTestDB();
-    db1.put("a", "1");
-    db1.put("b", "1");
-    db1.put("c", "1");
+    var db1 = await _openTestDB();
+    db1.put('a', '1');
+    db1.put('b', '1');
+    db1.put('c', '1');
 
     try {
-      for (RocksItem<String, String> _ in db1.getItems()) {
-        throw new Exception("OH NO");
+      for (var _ in db1.getItems()) {
+        throw Exception('OH NO');
       }
     } catch (e) {
       // Pass
@@ -197,46 +197,44 @@ void main() {
   });
 
   test('Test with None encoding', () async {
-    RocksDB<Uint8List, Uint8List> dbNone =
+    var dbNone =
         await _openTestDBEnc(RocksDB.identity, RocksDB.identity, shared: true);
-    RocksDB<String, String> dbAscii = await _openTestDBEnc(
-        RocksDB.ascii, RocksDB.ascii,
+    var dbAscii = await _openTestDBEnc(RocksDB.ascii, RocksDB.ascii,
         shared: true, clean: false);
-    RocksDB<String, String> dbUtf8 = await _openTestDBEnc(
-        RocksDB.utf8, RocksDB.utf8,
+    var dbUtf8 = await _openTestDBEnc(RocksDB.utf8, RocksDB.utf8,
         shared: true, clean: false);
-    Uint8List v = new Uint8List.fromList(utf8.encode("key1"));
+    var v = Uint8List.fromList(utf8.encode('key1'));
     dbNone.put(v, v);
 
-    String s = dbUtf8.get("key1");
-    expect(s, equals("key1"));
+    var s = dbUtf8.get('key1');
+    expect(s, equals('key1'));
 
-    String s2 = dbAscii.get("key1");
-    expect(s2, equals("key1"));
+    var s2 = dbAscii.get('key1');
+    expect(s2, equals('key1'));
 
-    Uint8List v2 = dbNone.get(v);
+    var v2 = dbNone.get(v);
     expect(v2, equals(v));
 
     dbNone.delete(v);
     expect(dbNone.get(v), null);
     dbNone.close();
 
-    expect(dbAscii.get("key1"), null);
+    expect(dbAscii.get('key1'), null);
     dbAscii.close();
 
-    expect(dbUtf8.get("key1"), null);
+    expect(dbUtf8.get('key1'), null);
     dbUtf8.close();
   });
 
   test('Close inside iteration', () async {
-    RocksDB<String, String> db1 = await _openTestDB();
-    db1.put("a", "1");
-    db1.put("b", "1");
+    var db1 = await _openTestDB();
+    db1.put('a', '1');
+    db1.put('b', '1');
 
-    bool isClosedSeen = false;
+    var isClosedSeen = false;
 
     try {
-      for (RocksItem<String, String> _ in db1.getItems()) {
+      for (var _ in db1.getItems()) {
         db1.close();
       }
     } on RocksClosedError catch (_) {
@@ -248,89 +246,88 @@ void main() {
 
   test('Test no create if missing', () async {
     expect(
-        RocksDB.openUtf8('/tmp/test-rocks-db-dart-DOES-NOT-EXIST',
+        RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-DOES-NOT-EXIST',
             createIfMissing: false),
         throwsA(_isInvalidArgumentError));
   });
 
   test('Test error if exists', () async {
-    RocksDB<String, String> db =
-        await RocksDB.openUtf8('/tmp/test-rocks-db-dart-exists');
+    var db = await RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-exists');
     db.close();
     expect(
-        RocksDB.openUtf8('/tmp/test-rocks-db-dart-exists', errorIfExists: true),
+        RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-exists', errorIfExists: true),
         throwsA(_isInvalidArgumentError));
   });
 
   test('RocksDB sync iterator', () async {
-    RocksDB<String, String> db = await _openTestDB();
+    var db = await _openTestDB();
 
-    db.put("k1", "v");
-    db.put("k2", "v");
+    db.put('k1', 'v');
+    db.put('k2', 'v');
 
     // All keys
-    List<RocksItem<String, String>> items1 = db.getItems().toList();
+    var items1 = db.getItems().toList();
     expect(items1.length, equals(2));
     expect(items1.map((RocksItem<String, String> i) => i.key).toList(),
-        equals(<String>["k1", "k2"]));
+        equals(<String>['k1', 'k2']));
     expect(items1.map((RocksItem<String, String> i) => i.value).toList(),
-        equals(<String>["v", "v"]));
+        equals(<String>['v', 'v']));
 
-    List<RocksItem<String, String>> items = db.getItems(gte: "k1").toList();
+    var items = db.getItems(gte: 'k1').toList();
     expect(items.length, equals(2));
-    items = db.getItems(gt: "k1").toList();
+    items = db.getItems(gt: 'k1').toList();
     expect(items.length, equals(1));
 
-    items = db.getItems(gt: "k0").toList();
+    items = db.getItems(gt: 'k0').toList();
     expect(items.length, equals(2));
 
-    items = db.getItems(gt: "k5").toList();
+    items = db.getItems(gt: 'k5').toList();
     expect(items.length, equals(0));
-    items = db.getItems(gte: "k5").toList();
+    items = db.getItems(gte: 'k5').toList();
     expect(items.length, equals(0));
 
     items = db.getItems(limit: 1).toList();
     expect(items.length, equals(1));
 
-    items = db.getItems(lte: "k2").toList();
+    items = db.getItems(lte: 'k2').toList();
     expect(items.length, equals(2));
-    items = db.getItems(lt: "k2").toList();
+    items = db.getItems(lt: 'k2').toList();
     expect(items.length, equals(1));
 
-    items = db.getItems(gt: "k1", lt: "k2").toList();
+    items = db.getItems(gt: 'k1', lt: 'k2').toList();
     expect(items.length, equals(0));
 
-    items = db.getItems(gte: "k1", lt: "k2").toList();
+    items = db.getItems(gte: 'k1', lt: 'k2').toList();
     expect(items.length, equals(1));
 
-    items = db.getItems(gt: "k1", lte: "k2").toList();
+    items = db.getItems(gt: 'k1', lte: 'k2').toList();
     expect(items.length, equals(1));
 
-    items = db.getItems(gte: "k1", lte: "k2").toList();
+    items = db.getItems(gte: 'k1', lte: 'k2').toList();
     expect(items.length, equals(2));
 
-    String val =
-        "bv-12345678901234567890123456789012345678901234567890123456789012345678901234567890";
-    db.put("a", val);
-    RocksItem<String, String> item = db.getItems(lte: "a").first;
+    var val =
+        'bv-12345678901234567890123456789012345678901234567890123456789012345678901234567890';
+    db.put('a', val);
+    var item = db.getItems(lte: 'a').first;
     expect(item.value.length, val.length);
 
-    String longKey = "";
-    for (int _ in new Iterable<int>.generate(10)) {
+    var longKey = '';
+    for (var _ in Iterable<int>.generate(10)) {
       longKey += val;
     }
     db.put(longKey, longKey);
-    item = db.getItems(gt: "a", lte: "c").first;
+    item = db.getItems(gt: 'a', lte: 'c').first;
     expect(item.value.length, longKey.length);
 
     db.close();
   });
 
   test('RocksDB sync iterator use after close', () async {
-    RocksDB<String, String> db = await _openTestDB();
+    var db = await _openTestDB();
 
-    db.put("k1", "v");
-    db.put("k2", "v");
+    db.put('k1', 'v');
+    db.put('k2', 'v');
 
     // All keys
     Iterator<RocksItem<String, String>> it = db.getItems().iterator;
@@ -342,21 +339,21 @@ void main() {
   });
 
   test('RocksDB sync iterator current == null', () async {
-    RocksDB<String, String> db = await _openTestDB();
+    var db = await _openTestDB();
 
-    db.put("k1", "v");
-    RocksIterator<String, String> it = db.getItems().iterator;
+    db.put('k1', 'v');
+    var it = db.getItems().iterator;
     expect(it.current, null);
     expect(it.currentKey, null);
     expect(it.currentValue, null);
 
     it.moveNext();
-    expect(it.current.key, "k1");
-    expect(it.currentKey, "k1");
-    expect(it.currentValue, "v");
+    expect(it.current.key, 'k1');
+    expect(it.currentKey, 'k1');
+    expect(it.currentValue, 'v');
     expect(it.moveNext(), false);
     expect(it.current, null);
-    for (int _ in new Iterable<int>.generate(10)) {
+    for (var _ in Iterable<int>.generate(10)) {
       expect(it.moveNext(),
           false); // Dart requires that it is safe to call moveNext after the end.
       expect(it.current, null);
@@ -367,68 +364,67 @@ void main() {
   });
 
   test('Shared db in same isolate', () async {
-    RocksDB<String, String> db = await _openTestDB(shared: true);
-    RocksDB<String, String> db1 = await _openTestDB(shared: true);
+    var db = await _openTestDB(shared: true);
+    var db1 = await _openTestDB(shared: true);
 
-    db.put("k1", "v");
-    expect(db1.get("k1"), "v");
+    db.put('k1', 'v');
+    expect(db1.get('k1'), 'v');
 
     // Close the 1st reference. It cannot be used now.
     db.close();
-    expect(() => db.get("SOME KEY"), throwsA(_isClosedError));
+    expect(() => db.get('SOME KEY'), throwsA(_isClosedError));
 
     // db1 Should still work.
-    db1.put("k1", "v2");
-    expect(db1.get("k1"), "v2");
+    db1.put('k1', 'v2');
+    expect(db1.get('k1'), 'v2');
 
     // close the 2nd reference. It cannot be used.
     db1.close();
-    expect(() => db1.get("SOME KEY"), throwsA(_isClosedError));
+    expect(() => db1.get('SOME KEY'), throwsA(_isClosedError));
   });
 
   test('Shared db removed from map', () async {
     // Test that a shared db is correctly removed from the shared map when closed.
-    RocksDB<String, String> db = await _openTestDB(shared: true);
+    var db = await _openTestDB(shared: true);
     db.close();
 
     // Since the db is closed above it will be remove from the shared map and therefore
     // this will open a new db and we are allowed to read/write keys.
-    RocksDB<String, String> db1 = await _openTestDB(shared: true);
-    db1.put("k1", "v");
-    expect(db1.get("k1"), "v");
+    var db1 = await _openTestDB(shared: true);
+    db1.put('k1', 'v');
+    expect(db1.get('k1'), 'v');
   });
 
   test('Shared db isolates test', () async {
     // Spawn 2 isolates of which open and close the same shared db a lot in an attempt to find race conditions
     // in opening and closing the db.
     Future<Null> run(int index) {
-      Completer<Null> completer = new Completer<Null>();
-      RawReceivePort exitPort = new RawReceivePort((dynamic _) {
+      var completer = Completer<Null>();
+      var exitPort = RawReceivePort((dynamic _) {
         if (!completer.isCompleted) {
           completer.complete();
         }
       });
-      RawReceivePort errorPort =
-          new RawReceivePort((dynamic v) => completer.completeError(v));
+      var errorPort = RawReceivePort((dynamic v) => completer.completeError(v));
       Isolate.spawn(_isolateTest, index,
           onExit: exitPort.sendPort, onError: errorPort.sendPort);
       return completer.future;
     }
 
-    await Future.wait(new Iterable<int>.generate(2).map(run), eagerError: true);
+    await Future.wait(Iterable<int>.generate(2).map(run), eagerError: true);
   });
 }
 
 // Must be a top-level because this function runs in another isolate.
 Future<Null> _isolateTest(int v) async {
-  for (int _ in new Iterable<int>.generate(1000)) {
-    RocksDB<String, String> db = await _openTestDB(shared: true, clean: false);
+  for (var _ in Iterable<int>.generate(1000)) {
+    var db = await _openTestDB(shared: true, clean: false);
     // Allocate an iterator.
-    for (RocksItem<String, String> _ in db.getItems(limit: 2)) {
+    for (var _ in db.getItems(limit: 2)) {
       // pass
     }
     db.close();
 
-    await new Future<Null>.delayed(new Duration(milliseconds: 2));
+    await Future<Null>.delayed(Duration(milliseconds: 2));
   }
 }
