@@ -1,21 +1,22 @@
 * dart-rocksdb
 ** Near Term
-*** TODO test if isolates really works: =example/isolate.dart=
-*** TODO test if the json encoding example really works
-**** c.f. ~Custom Encoding and Decoding~ in github:adamlofts/leveldb_dart
-*** TODO verify support features, update ~Feature Support~ list
 *** TODO replace the =Makefile= with a better build system
 **** https://pub.dev/packages/build_native looks promising
 **** build_native might handle the Dart SDK inclusion as well
+*** TODO should build rocksdb with =PORTABLE=1 make static_lib= to build a portable binary
 *** TODO test the build on Windows
+**** also test the examples, some have Unix paths like =/tmp=
 *** TODO test the build on Ubuntu Linux
 **** need to build rocksdb with zstd included
+**** why build static lib versus shared lib?
 **** is =-D_GLIBCXX_USE_CXX11_ABI= compiler flag really needed?
 *** TODO test the build on CentOS Linux
+*** TODO examples all write to the same test database path
 *** TODO fix the inconsistent indentation of the C++ code
 **** =brew install clang-format=
 **** install VS Code clang-format module
 *** TODO fix all of the linter warnings in the Dart code
+**** including the examples
 *** TODO try using =build_native= to build rocksdb
 **** Linux requires different compiler flags
 *** TODO do like =rust-rocksdb= and include the compression libs as submodules
@@ -24,5 +25,8 @@
 *** TODO make the examples easy to run, maybe need their own directory and =pubspec.yaml=
 *** TODO introduce a =CHANGELOG.md=
 ** Long Term
+*** TODO add support for backward iteration
+*** TODO add support for bulk get/put
 *** TODO add support for column families
 *** TODO add support to get update sequence number
+*** TODO add support for snapshots
