@@ -4,26 +4,31 @@ import 'dart:convert';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:rocksdb/rocksdb.dart';
 
 Future<RocksDB<String, String>> _openTestDB(
     {int index = 0, bool shared = false, bool clean = true}) async {
-  var d = Directory('/tmp/testdb-dart-rocksdb-$index');
+  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'test-$index');
+  var d = Directory(tp);
   if (clean && d.existsSync()) {
     await d.delete(recursive: true);
   }
-  return RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-$index', shared: shared);
+  await d.create(recursive: true);
+  return RocksDB.openUtf8(tp, shared: shared);
 }
 
 Future<RocksDB<K, V>> _openTestDBEnc<K, V>(
     Codec<K, Uint8List> keyEncoding, Codec<V, Uint8List> valueEncoding,
     {int index = 0, bool shared = false, bool clean = true}) async {
-  var d = Directory('/tmp/testdb-dart-rocksdb-$index');
+  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'test-$index');
+  var d = Directory(tp);
   if (clean && d.existsSync()) {
     await d.delete(recursive: true);
   }
-  return RocksDB.open('/tmp/testdb-dart-rocksdb-$index',
+  await d.create(recursive: true);
+  return RocksDB.open(tp,
       shared: shared, keyEncoding: keyEncoding, valueEncoding: valueEncoding);
 }
 
@@ -245,17 +250,18 @@ void main() {
   });
 
   test('Test no create if missing', () async {
-    expect(
-        RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-DOES-NOT-EXIST',
-            createIfMissing: false),
+    var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'does-not-exist');
+    expect(RocksDB.openUtf8(tp, createIfMissing: false),
         throwsA(_isInvalidArgumentError));
   });
 
   test('Test error if exists', () async {
-    var db = await RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-exists');
+    var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'exists');
+    var d = Directory(tp);
+    await d.create(recursive: true);
+    var db = await RocksDB.openUtf8(tp);
     db.close();
-    expect(
-        RocksDB.openUtf8('/tmp/testdb-dart-rocksdb-exists', errorIfExists: true),
+    expect(RocksDB.openUtf8(tp, errorIfExists: true),
         throwsA(_isInvalidArgumentError));
   });
 

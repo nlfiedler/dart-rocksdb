@@ -4,7 +4,6 @@
 **** https://pub.dev/packages/build_native looks promising
 **** build_native might handle the Dart SDK inclusion as well
 *** TODO test the build on Windows
-**** also test the examples, some have Unix paths like =/tmp=
 *** TODO test the build on Ubuntu Linux
 **** need to build rocksdb with zstd included
 **** why build static lib versus shared lib?

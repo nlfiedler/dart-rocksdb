@@ -1,7 +1,9 @@
 import 'dart:async';
-
-import 'package:rocksdb/rocksdb.dart';
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+import 'package:rocksdb/rocksdb.dart';
 
 /// Example of using a JSON codec
 /// Output is:
@@ -16,7 +18,9 @@ Future<dynamic> main() async {
       const JsonCodec().fuse(const Utf8Codec()).fuse(const Uint8ListCodec());
 
   // Create a DB using this codec
-  var db = await RocksDB.open<String, Object>('/tmp/testdb/json',
+  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'json');
+  await Directory(tp).create(recursive: true);
+  var db = await RocksDB.open<String, Object>(tp,
       keyEncoding: RocksDB.utf8, valueEncoding: valueCodec);
 
   // The objects we store must follow the JSON rules (only string keys in maps) etc...

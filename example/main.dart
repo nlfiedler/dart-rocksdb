@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:rocksdb/rocksdb.dart';
 
 /// main example.
 Future<dynamic> main() async {
   // Open a database. It is created if it does not already exist. Only one process can
   // open a database at a time.
-  var db = await RocksDB.openUtf8('/tmp/testdb/main');
+  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'main');
+  await Directory(tp).create(recursive: true);
+  var db = await RocksDB.openUtf8(tp);
 
   // By default keys and values are strings.
   db.put('abc', 'def');
@@ -60,7 +64,7 @@ Future<dynamic> main() async {
   db.close();
 
   // Open a new db which will use raw UInt8List data. This is faster since it avoids any decoding.
-  var db2 = await RocksDB.openUint8List('/tmp/testdb/main');
+  var db2 = await RocksDB.openUint8List(tp);
 
   for (var item in db2.getItems()) {
     print('${item.key}'); // Prints [107, 101, 121, 45, 48], ...

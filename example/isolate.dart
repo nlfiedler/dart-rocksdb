@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
+import 'package:path/path.dart' as p;
 import 'package:rocksdb/rocksdb.dart';
 
 /// This example demonstrates how to access a database from multiple isolates.
@@ -19,7 +21,9 @@ Future<dynamic> main() async {
 Future<Null> run(int index) async {
   // Because shared: true is passed the DB returned by this method will reference the same
   // database.
-  var db = await RocksDB.openUtf8('/tmp/testdb/isolate', shared: true);
+  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'isolate');
+  await Directory(tp).create(recursive: true);
+  var db = await RocksDB.openUtf8(tp, shared: true);
 
   // Write our key to the db
   print('Thread $index write key $index -> $index');
