@@ -15,18 +15,24 @@ This [Dart](https://dart.dev) package is a wrapper for the [RocksDB](https://roc
 
 ## Basic Usage
 
-Add `rocksdb` to the `dependencies` in the `pubspec.yaml` file and run `pub get`.
+Add `rocksdb` to the `dependencies` in the `pubspec.yaml` file and run `pub get`. For now the package is only available via git.
 
-Check out `example/main.dart` to see how to read, write, and iterate over keys and values.
+```yaml
+dependencies:
+  rocksdb:
+    git: git://github.com/nlfiedler/dart-rocksdb.git
+```
+
+See the `example/main.dart` for an example of how to read, write, and iterate over keys and values. The `example/isolate.dart` code demonstrates accessing a single RocksDB instance from multiple isolates. The `example/json.dart` file shows how to configure custom encoders for keys and values.
 
 ## Build and Test
 
-These steps are for working on the dart-rocksdb package itself. Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md).
+These steps are for working on the dart-rocksdb package itself. Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md). Use the `PORTABLE=1` environment setting to build a portable version of the RocksDB library.
 
 ```shell
 $ git submodule update --init
 $ cd rocksdb
-$ make static_lib
+$ PORTABLE=1 make static_lib
 $ cd ..
 $ make clean && make
 $ pub run test
@@ -34,7 +40,7 @@ $ pub run test
 
 ### macOS
 
-On recent releases of macOS, it may be necessary to remove the code signature from the `dart` binary, otherwise the OS will prohibit linking with unsigned libraries, like the one built by this package.
+On recent releases of macOS, it may be necessary to remove the code signature from the `dart` binary, otherwise the OS will prohibit linking with unsigned libraries, like the one built by this package. See [issue #38314](https://github.com/dart-lang/sdk/issues/38314) for additional information and the current status.
 
 ```shell
 $ codesign --remove-signature /usr/local/bin/dart

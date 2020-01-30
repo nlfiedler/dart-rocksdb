@@ -3,7 +3,6 @@
 *** TODO replace the =Makefile= with a better build system
 **** https://pub.dev/packages/build_native looks promising
 **** build_native might handle the Dart SDK inclusion as well
-*** TODO should build rocksdb with =PORTABLE=1 make static_lib= to build a portable binary
 *** TODO test the build on Windows
 **** also test the examples, some have Unix paths like =/tmp=
 *** TODO test the build on Ubuntu Linux
@@ -13,7 +12,8 @@
 *** TODO test the build on CentOS Linux
 *** TODO try using =build_native= to build rocksdb
 **** Linux requires different compiler flags
-*** TODO do like =rust-rocksdb= and include the compression libs as submodules
+*** TODO should include the compression libs as submodules
+**** see =rust-rocksdb= for an example
 *** TODO look for ways to build the native parts automatically
 **** maybe something like node-gyp and/or node-pre-gyp
 *** TODO ensure adequate API documentation

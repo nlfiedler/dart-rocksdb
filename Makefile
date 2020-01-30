@@ -7,7 +7,7 @@
 #
 # $ EXTRA_CFLAGS='-D_GLIBCXX_USE_CXX11_ABI=0 -std=c++11' \
 #   EXTRA_CXXFLAGS='-D_GLIBCXX_USE_CXX11_ABI=0 -std=c++11 -fPIC' \
-#   make static_lib
+#   PORTABLE=1 make static_lib
 #
 # The -fPIC enables linking the static library into the object we will build.
 # -D_GLIBCXX_USE_CXX11_ABI turns off the new C++11 ABI, which means the build
