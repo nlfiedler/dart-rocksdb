@@ -32,7 +32,8 @@ $ sudo apt-get install libzstd-dev
 **** build_native might handle the Dart SDK inclusion as well
 **** could also use build_native to build rocksdb static library
 ** Long Term
-*** TODO likely need to use Git LFS for storing compiled binaries
+*** TODO will need a release process that bundles the binaries
+**** the =pub= command probably has a means of including binaries
 *** TODO add support for backward iteration
 *** TODO add support for bulk get/put
 *** TODO add support for column families

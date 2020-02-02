@@ -3,7 +3,6 @@
 #
 
 ROCKSDB_SOURCE = rocksdb
-# DART_SDK ?= /usr/lib/dart
 DART_SDK ?= /usr/local/Cellar/dart/2.7.1/libexec
 LIBS = $(ROCKSDB_SOURCE)/librocksdb.a
 CFLAGS = -O2 -Wall -std=c++11

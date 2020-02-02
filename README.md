@@ -27,7 +27,7 @@ See the `example/main.dart` for an example of how to read, write, and iterate ov
 
 ## Build and Test
 
-These steps are for working on the dart-rocksdb package itself, users of the package should not have to run these steps. Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md). Use the `PORTABLE=1` environment setting to build a portable version of the RocksDB library.
+These steps are for working on the `dart-rocksdb` package itself, users of the package should not have to run these steps. Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md). Use the `PORTABLE=1` environment setting to build a portable version of the RocksDB library.
 
 ### Linux
 
@@ -71,7 +71,7 @@ Using the `RocksDB.openUtf8()` function your application can open a database who
 
 Feedback and pull requests are welcome.
 
-## History and Credit
+## History
 
 This package was originally [created](https://github.com/adamlofts/leveldb_dart) in 2016 by Adam Lofts as a wrapper for [LevelDB](https://github.com/google/leveldb/).
 
