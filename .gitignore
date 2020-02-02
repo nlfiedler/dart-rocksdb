@@ -13,5 +13,5 @@ doc/api/
 
 # ignore the intermediate binary file
 lib/librocksdb.dylib
-lib/librocksdb.o
+lib/librocksdb.so
 lib/rocksdb.o
