@@ -15,13 +15,7 @@ This [Dart](https://dart.dev) package is a wrapper for the [RocksDB](https://roc
 
 ## Basic Usage
 
-Add `rocksdb` to the `dependencies` in the `pubspec.yaml` file and run `pub get`. For now the package is only available via git.
-
-```yaml
-dependencies:
-  rocksdb:
-    git: git://github.com/nlfiedler/dart-rocksdb.git
-```
+Start by building the package's native components and running the tests: see [Build and Test](#build-and-test) below. Eventually this package will mature to the point of being published on [pub.dev](https://pub.dev), but for now it is necessary to build everything locally.
 
 See the `example/main.dart` for an example of how to read, write, and iterate over keys and values. The `example/isolate.dart` code demonstrates accessing a single RocksDB instance from multiple isolates. The `example/json.dart` file shows how to configure custom encoders for keys and values.
 
