@@ -27,23 +27,30 @@ See the `example/main.dart` for an example of how to read, write, and iterate ov
 
 ## Build and Test
 
-These steps are for working on the dart-rocksdb package itself. Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md). Use the `PORTABLE=1` environment setting to build a portable version of the RocksDB library.
+These steps are for working on the dart-rocksdb package itself, users of the package should not have to run these steps. Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md). Use the `PORTABLE=1` environment setting to build a portable version of the RocksDB library.
+
+### Linux
 
 ```shell
 $ git submodule update --init
-$ cd rocksdb
-$ PORTABLE=1 make static_lib
-$ cd ..
-$ make clean && make
+$ cd rocksdb && EXTRA_CXXFLAGS='-fPIC' PORTABLE=1 make static_lib
+$ make clean all
 $ pub run test
 ```
 
 ### macOS
 
+```shell
+$ git submodule update --init
+$ cd rocksdb && PORTABLE=1 make static_lib
+$ make clean all
+$ pub run test
+```
+
 On recent releases of macOS, it may be necessary to remove the code signature from the `dart` binary, otherwise the OS will prohibit linking with unsigned libraries, like the one built by this package. See [issue #38314](https://github.com/dart-lang/sdk/issues/38314) for additional information and the current status.
 
 ```shell
-$ codesign --remove-signature /usr/local/bin/dart
+$ codesign --remove-signature $(which dart)
 ```
 
 ## Feature Support
@@ -52,6 +59,7 @@ $ codesign --remove-signature /usr/local/bin/dart
 - [x] Forward iteration
 - [x] Multi-isolate
 - [ ] Backward iteration
+- [ ] Column Families
 - [ ] Snapshots
 - [ ] Bulk get / put
 
@@ -68,3 +76,13 @@ Feedback and pull requests are welcome.
 This package was originally [created](https://github.com/adamlofts/leveldb_dart) in 2016 by Adam Lofts as a wrapper for [LevelDB](https://github.com/google/leveldb/).
 
 In early 2019 Logan Gorence [converted](https://github.com/SpinlockLabs/rocksdb-dart) the code to link with RocksDB.
+
+## Resources
+
+### Compiling and Linking
+
+For someone who is not all that familiar with C programming, these resources are very helpful for understanding the process of compiling and linking C/C++ libraries.
+
+* http://www.yolinux.com/TUTORIALS/LibraryArchives-StaticAndDynamic.html
+* https://www.cprogramming.com/tutorial/shared-libraries-linux-gcc.html
+* https://eli.thegreenplace.net/2013/07/09/library-order-in-static-linking
