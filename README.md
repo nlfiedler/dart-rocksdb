@@ -6,12 +6,20 @@ This [Dart](https://dart.dev) package is a wrapper for the [RocksDB](https://roc
 
 ## Platform Support
 
-- [ ] Android
-- [ ] iOS
-- [ ] JavaScript
-- [ ] Linux
-- [x] macOS
-- [ ] Windows
+### Tested
+
+- Linux
+- macOS
+
+### Not Yet Tested
+
+- Android
+- iOS
+- Windows
+
+### Unsupported
+
+- JavaScript: Due to the native components there is little chance this package will work in JavaScript.
 
 ## Basic Usage
 
@@ -21,7 +29,7 @@ See the `example/main.dart` for an example of how to read, write, and iterate ov
 
 ## Build and Test
 
-Before beginning, be sure to install the prerequisites for building RocksDB itself, as described in the [INSTALL.md](https://github.com/facebook/rocksdb/blob/master/INSTALL.md). Use the `PORTABLE=1` environment setting to build a portable version of the RocksDB library.
+Before beginning, use the instructions in [INSTALL.md](./INSTALL.md) as a guide for setting up your system to build the package and its dependencies. When building RocksDB itself, use the `PORTABLE=1` environment setting to build a portable version of the library.
 
 ### Linux
 
@@ -29,6 +37,7 @@ Before beginning, be sure to install the prerequisites for building RocksDB itse
 $ git submodule update --init
 $ cd rocksdb && EXTRA_CXXFLAGS='-fPIC' PORTABLE=1 make static_lib
 $ make clean all
+$ pub get
 $ pub run test
 ```
 
@@ -38,6 +47,7 @@ $ pub run test
 $ git submodule update --init
 $ cd rocksdb && PORTABLE=1 make static_lib
 $ make clean all
+$ pub get
 $ pub run test
 ```
 
@@ -70,6 +80,8 @@ Feedback and pull requests are welcome.
 This package was originally [created](https://github.com/adamlofts/leveldb_dart) in 2016 by Adam Lofts as a wrapper for [LevelDB](https://github.com/google/leveldb/).
 
 In early 2019 Logan Gorence [converted](https://github.com/SpinlockLabs/rocksdb-dart) the code to link with RocksDB.
+
+Nathan rebuilt the repository history by merging both Adam's and Logan's repositories, then filtering out the frequently updated, and potentially very large, build artifacts in the `lib` directory.
 
 ## Resources
 

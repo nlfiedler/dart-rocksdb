@@ -1,29 +1,9 @@
 * dart-rocksdb
 ** Near Term
-*** DONE test the build on Ubuntu Linux
-**** commands to set up a clean bionic64 vm
-#+BEGIN_SRC shell
-$ sudo apt-get update
-$ sudo apt-get install build-essential
-$ sudo apt-get install libgflags-dev
-$ sudo apt-get install libsnappy-dev
-$ sudo apt-get install zlib1g-dev
-$ sudo apt-get install libbz2-dev
-$ sudo apt-get install liblz4-dev
-$ sudo apt-get install libzstd-dev
-#+END_SRC
-*** TODO test the build on CentOS Linux
 *** TODO test the build on Windows
 *** TODO ensure adequate API documentation
 *** TODO unit tests should clean up after themselves
 *** TODO examples should clean up after themselves
-*** TODO introduce a =CHANGELOG.md=
-*** TODO test usage of the package on a bare system (only dart)
-**** most likely need to install the compression libs
-**** centos
-**** macos
-**** ubuntu
-**** windows
 *** TODO should include the compression libs as submodules
 **** this would make the build process easier and less system-dependent
 **** see =rust-rocksdb= for example of submodules and build process
@@ -34,6 +14,12 @@ $ sudo apt-get install libzstd-dev
 ** Long Term
 *** TODO will need a release process that bundles the binaries
 **** the =pub= command probably has a means of including binaries
+**** test usage of the package on a bare system (only dart)
+***** most likely need to install the compression libs
+***** centos
+***** macos
+***** ubuntu
+***** windows
 *** TODO add support for backward iteration
 *** TODO add support for bulk get/put
 *** TODO add support for column families
