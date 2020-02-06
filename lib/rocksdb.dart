@@ -15,7 +15,7 @@ import 'dart-ext:rocksdb';
 
 import 'package:meta/meta.dart' show required;
 
-/// Base class for all exceptions thrown by rocksdb.
+/// Base class for all exceptions thrown by RocksDB.
 abstract class RocksError implements Exception {
   final String _msg;
   const RocksError._internal(this._msg);
@@ -28,17 +28,18 @@ class RocksClosedError extends RocksError {
   const RocksClosedError._internal() : super._internal('DB already closed');
 }
 
-/// Exception thrown if a general IO error is encountered.
+/// Exception thrown if a general I/O error is encountered.
 class RocksIOError extends RocksError {
   const RocksIOError._internal() : super._internal('IOError');
 }
 
-/// Exception thrown if the db is corrupted
+/// Exception thrown if the database is corrupted.
 class RocksCorruptionError extends RocksError {
   const RocksCorruptionError._internal() : super._internal('Corruption error');
 }
 
-/// Exception thrown if invalid argument (e.g. if the database does not exist and createIfMissing is false)
+/// Exception thrown if invalid argument (e.g. if the database does not exist
+/// and createIfMissing is false).
 class RocksInvalidArgumentError extends RocksError {
   const RocksInvalidArgumentError._internal()
       : super._internal('Invalid argument');
@@ -56,7 +57,7 @@ class _Uint8ListDecoder extends convert.Converter<Uint8List, List<int>> {
   List<int> convert(Uint8List input) => input;
 }
 
-/// This codec will encode a [List<int>] to the [Uint8List] required by RocksDB dart.
+/// This codec will encode a [List<int>] to the [Uint8List] required by RocksDB.
 class Uint8ListCodec extends convert.Codec<List<int>, Uint8List> {
   /// Default constructor
   const Uint8ListCodec();
@@ -84,7 +85,7 @@ class _IdentityCodec extends convert.Codec<Uint8List, Uint8List> {
       const _IdentityConverter();
 }
 
-/// A key-value database
+/// A key-value database created through one of the static open functions.
 class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   final convert.Codec<K, Uint8List> _keyEncoding;
   final convert.Codec<V, Uint8List> _valueEncoding;
@@ -124,22 +125,25 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
     return false;
   }
 
-  /// Default encoding. Expects to be passed a String and will encode/decode to UTF8 in the db.
+  /// Default encoding. Expects to be passed a String and will encode/decode to
+  /// UTF-8 in the database.
   static convert.Codec<String, Uint8List> get utf8 =>
       const convert.Utf8Codec().fuse(const Uint8ListCodec());
 
-  /// Ascii encoding. Potentially faster than UTF8 for ascii-only text (untested).
+  /// ASCII encoding. Potentially faster than UTF8 for ascii-only text.
   static convert.Codec<String, Uint8List> get ascii =>
       const convert.AsciiCodec().fuse(const Uint8ListCodec());
 
-  /// The identity encoding does no encoding. You must pass in a Uint8List to all functions.
-  /// Because it does no transformation it reduces the number of allocations.
-  /// Use this encoding for performance.
+  /// The identity encoding does no encoding.
+  ///
+  /// You must pass in a Uint8List to all functions. Because it does no
+  /// transformation it reduces the number of allocations. Use this encoding for
+  /// performance.
   static convert.Codec<Uint8List, Uint8List> get identity =>
       const _IdentityCodec();
 
-  /// Open a database at [path] using [String] keys and values which will be encoded to utf8
-  /// in the database.
+  /// Open a database at [path] using [String] keys and values which will be
+  /// encoded to utf8 in the database.
   ///
   /// See [open] for information on optional parameters.
   static Future<RocksDB<String, String>> openUtf8(String path,
@@ -175,13 +179,14 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
 
   /// Open a database at [path]
   ///
-  /// If [shared] is true the database will be shared to other isolates in the dart vm. The [RocksDB] returned
-  /// in another isolate calling [open] with the same [path] will share the underlying database and data changes
-  /// will be visible to both.
+  /// If [shared] is true the database will be shared to other isolates in the
+  /// Dart VM. The [RocksDB] returned in another isolate calling [open] with the
+  /// same [path] will share the underlying database and data changes will be
+  /// visible to both.
   ///
-  /// [keyEncoding] or [valueEncoding] must be specified. The given encoding will
-  /// be used to encoding and decode keys or values respectively. The encodings must match the generic
-  /// type of the database.
+  /// [keyEncoding] or [valueEncoding] must be specified. The given encoding
+  /// will be used to encoding and decode keys or values respectively. The
+  /// encodings must match the generic type of the database.
   static Future<RocksDB<K, V>> open<K, V>(String path,
       {bool shared = false,
       int blockSize = 4096,
@@ -207,6 +212,7 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   }
 
   /// Close this database.
+  ///
   /// Any pending iteration will throw after this call.
   void close() {
     _syncClose();
@@ -230,22 +236,25 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
     _syncPut(keyEnc, valueEnc, sync);
   }
 
-  /// Remove a key from the database
+  /// Remove a key from the database.
   void delete(K key) {
     var keyEnc = _keyEncoding.encode(key);
     _syncDelete(keyEnc);
   }
 
-  /// Return an [Iterable] which will iterate through the db in key byte-collated order.
+  /// Return an [Iterable] which will iterate through the database in key
+  /// byte-collated order.
   ///
-  /// To start iteration from a particular point use [gt] or [gte] and the iterator will start at the first key
-  /// `>` or `>=` the passed value respectively. To stop iteration before the end use [lt] or [lte] to end at the
-  /// key `<` or `<=` the passed value respectively.
+  /// To start iteration from a particular point use [gt] or [gte] and the
+  /// iterator will start at the first key `>` or `>=` the passed value
+  /// respectively. To stop iteration before the end use [lt] or [lte] to end at
+  /// the key `<` or `<=` the passed value respectively.
   ///
   /// The [limit] parameter limits the total number of items iterated.
   ///
-  /// For example, say a database contains the keys `a`, `b`, `c` and `d`. To iterate over all items from key `b`
-  /// and before `d` in the collation order you can write:
+  /// For example, say a database contains the keys `a`, `b`, `c` and `d`. To
+  /// iterate over all items from key `b` and before `d` in the collation order
+  /// you can write:
   ///
   ///     getItems(gte: 'b', lt: 'd')
   ///
@@ -256,17 +265,19 @@ class RocksDB<K, V> extends NativeFieldWrapperClass2 {
   }
 }
 
-/// A key-value pair returned by the iterator
+/// A key-value pair returned by the iterator.
 class RocksItem<K, V> {
-  /// The key. Type is determined by the keyEncoding specified
+  /// The key. The type is determined by the keyEncoding specified when
+  /// constructing the [RocksDB] instance.
   final K key;
 
-  /// The value. Type is determined by the valueEncoding specified
+  /// The value. The type is determined by the valueEncoding specified when
+  /// constructing the [RocksDB] instance.
   final V value;
   RocksItem._internal(this.key, this.value);
 }
 
-/// An iterator
+/// An iterator returned by an instance of [RocksIterable].
 class RocksIterator<K, V> extends NativeFieldWrapperClass2
     implements Iterator<RocksItem<K, V>> {
   final convert.Codec<K, Uint8List> _keyEncoding;
@@ -281,13 +292,13 @@ class RocksIterator<K, V> extends NativeFieldWrapperClass2
   Uint8List _next() native 'SyncIterator_Next';
   Uint8List _current;
 
-  /// The key of the current RocksItem
+  /// The key of the current RocksItem.
   K get currentKey => _current == null
       ? null
       : _keyEncoding.decode(
           Uint8List.view(_current.buffer, 4, (_current[1] << 8) + _current[0]));
 
-  /// The value of the current RocksItem
+  /// The value of the current RocksItem.
   V get currentValue => _current == null
       ? null
       : _valueEncoding.decode(Uint8List.view(
@@ -311,8 +322,8 @@ class RocksIterator<K, V> extends NativeFieldWrapperClass2
 ///
 /// Iteration is sorted by key in byte collation order.
 ///
-/// You can use the [keys] and [values] getters to get an [Iterable] over just the keys or just the values
-/// in the database.
+/// You can use the [keys] and [values] getters to get an [Iterable] over just
+/// the keys or just the values in the database.
 class RocksIterable<K, V> extends IterableBase<RocksItem<K, V>> {
   final RocksDB<K, V> _db;
 
@@ -352,7 +363,7 @@ class RocksIterable<K, V> extends IterableBase<RocksItem<K, V>> {
     return ret;
   }
 
-  /// Returns an [Iterable] of the keys in the db
+  /// Returns an [Iterable] of the keys in the database.
   Iterable<K> get keys sync* {
     var it = iterator;
     while (it.moveNext()) {
@@ -360,7 +371,7 @@ class RocksIterable<K, V> extends IterableBase<RocksItem<K, V>> {
     }
   }
 
-  /// Returns an [Iterable] of the values in the db
+  /// Returns an [Iterable] of the values in the database.
   Iterable<V> get values sync* {
     var it = iterator;
     while (it.moveNext()) {

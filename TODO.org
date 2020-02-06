@@ -1,16 +1,7 @@
 * dart-rocksdb
 ** Near Term
-*** TODO test the build on Windows
-*** TODO ensure adequate API documentation
 *** TODO unit tests should clean up after themselves
 *** TODO examples should clean up after themselves
-*** TODO should include the compression libs as submodules
-**** this would make the build process easier and less system-dependent
-**** see =rust-rocksdb= for example of submodules and build process
-*** TODO replace the =Makefile= with a better build system
-**** https://pub.dev/packages/build_native looks promising
-**** build_native might handle the Dart SDK inclusion as well
-**** could also use build_native to build rocksdb static library
 ** Long Term
 *** TODO will need a release process that bundles the binaries
 **** the =pub= command probably has a means of including binaries
@@ -25,3 +16,19 @@
 *** TODO add support for column families
 *** TODO add support to get update sequence number
 *** TODO add support for snapshots
+*** TODO should include the compression libs as submodules
+**** this would make the build process easier and less system-dependent
+**** see =rust-rocksdb= for example of submodules and build process
+*** TODO replace the =Makefile= with a better build system
+**** https://pub.dev/packages/build_native looks promising
+**** build_native might handle the Dart SDK inclusion as well
+**** could also use build_native to build rocksdb static library
+*** TODO test the build on Windows
+**** install git
+**** install Visual Studio "desktop development with C++" workload
+**** install dart sdk
+**** open Visual Studio
+**** find the "Command Line" menu under "Tools" to open a shell
+**** will need to have the compression libs in place as well
+**** use =cmake= to generate the make files to build rocksdb
+**** unclear how to proceed after that
