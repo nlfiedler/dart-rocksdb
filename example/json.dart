@@ -1,3 +1,7 @@
+//
+// Copyright (c) 2016 Adam Lofts
+// Copyright (c) 2019 Logan Gorence
+//
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -42,4 +46,6 @@ Future<dynamic> main() async {
     print('Value: $value');
   }
   db.close();
+  var d = Directory(tp);
+  await d.delete(recursive: true);
 }

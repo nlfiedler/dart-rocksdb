@@ -1,9 +1,15 @@
+//
+// Copyright (c) 2016 Adam Lofts
+// Copyright (c) 2019 Logan Gorence
+//
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 import 'package:rocksdb/rocksdb.dart';
+
+final dbpath = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'isolate');
 
 /// This example demonstrates how to access a database from multiple isolates.
 /// Isolates are implemented as os-threads in the dart vm so this allows you to
@@ -15,15 +21,18 @@ Future<dynamic> main() async {
   }).toList();
 
   await Future.wait(runners.map((Runner r) => r.finish));
+  var d = Directory(dbpath);
+  if (d.existsSync()) {
+    await d.delete(recursive: true);
+  }
 }
 
 /// This method is called in different OS threads by the dart VM.
 Future<Null> run(int index) async {
   // Because shared: true is passed the DB returned by this method will reference the same
   // database.
-  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'isolate');
-  await Directory(tp).create(recursive: true);
-  var db = await RocksDB.openUtf8(tp, shared: true);
+  await Directory(dbpath).create(recursive: true);
+  var db = await RocksDB.openUtf8(dbpath, shared: true);
 
   // Write our key to the db
   print('Thread $index write key $index -> $index');

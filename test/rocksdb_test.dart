@@ -1,3 +1,8 @@
+//
+// Copyright (c) 2016 Adam Lofts
+// Copyright (c) 2019 Logan Gorence
+// Copyright (c) 2020 Nathan Fiedler
+//
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
@@ -8,28 +13,14 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:rocksdb/rocksdb.dart';
 
-Future<RocksDB<String, String>> _openTestDB(
-    {int index = 0, bool shared = false, bool clean = true}) async {
-  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'test-$index');
-  var d = Directory(tp);
-  if (clean && d.existsSync()) {
-    await d.delete(recursive: true);
-  }
-  await d.create(recursive: true);
-  return RocksDB.openUtf8(tp, shared: shared);
-}
+final dbPaths = <String>{};
 
-Future<RocksDB<K, V>> _openTestDBEnc<K, V>(
-    Codec<K, Uint8List> keyEncoding, Codec<V, Uint8List> valueEncoding,
-    {int index = 0, bool shared = false, bool clean = true}) async {
-  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'test-$index');
+// Create a temporary path for the database files.
+String generateTempPath(String suffix) {
+  var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'test-${suffix}');
   var d = Directory(tp);
-  if (clean && d.existsSync()) {
-    await d.delete(recursive: true);
-  }
-  await d.create(recursive: true);
-  return RocksDB.open(tp,
-      shared: shared, keyEncoding: keyEncoding, valueEncoding: valueEncoding);
+  d.createSync(recursive: true);
+  return tp;
 }
 
 const Matcher _isClosedError = _ClosedMatcher();
@@ -44,10 +35,22 @@ class _InvalidArgumentMatcher extends TypeMatcher<RocksInvalidArgumentError> {
   const _InvalidArgumentMatcher();
 }
 
-/// tests
 void main() {
-  test('RocksDB basics', () async {
-    var db = await _openTestDB();
+  tearDown(() async {
+    // make a copy of the current elements to allow pruning the set
+    var copy = dbPaths.toSet();
+    for (var tp in copy) {
+      var d = Directory(tp);
+      if (d.existsSync()) {
+        await d.delete(recursive: true);
+      }
+    }
+    dbPaths.removeAll(copy);
+  });
+
+  test('basic operations', () async {
+    var path = generateTempPath('basics');
+    var db = await RocksDB.openUtf8(path);
 
     db.put('k1', 'v');
     db.put('k2', 'v');
@@ -97,8 +100,8 @@ void main() {
 
     db.close();
 
-    var db2 =
-        await _openTestDBEnc(RocksDB.identity, RocksDB.identity, clean: false);
+    var db2 = await RocksDB.open(path,
+        keyEncoding: RocksDB.identity, valueEncoding: RocksDB.identity);
 
     // Test with RocksEncodingNone
     var key = Uint8List(2);
@@ -124,10 +127,12 @@ void main() {
     expect(keys.length, equals(1));
 
     db2.close();
+    dbPaths.add(path);
   });
 
-  test('RocksDB delete', () async {
-    var db = await _openTestDB();
+  test('delete entry', () async {
+    var path = generateTempPath('delete');
+    var db = await RocksDB.openUtf8(path);
     try {
       db.put('k1', 'v');
       db.put('k2', 'v');
@@ -138,12 +143,15 @@ void main() {
       expect(db.getItems().length, 1);
     } finally {
       db.close();
+      dbPaths.add(path);
     }
   });
 
-  test('TWO DBS', () async {
-    var db1 = await _openTestDB();
-    var db2 = await _openTestDB(index: 1);
+  test('two separate databases', () async {
+    var path1 = generateTempPath('two-db-1');
+    var db1 = await RocksDB.openUtf8(path1);
+    var path2 = generateTempPath('two-db-2');
+    var db2 = await RocksDB.openUtf8(path2);
 
     db1.put('a', '1');
 
@@ -151,63 +159,74 @@ void main() {
     expect(v, equals(null));
 
     db1.close();
+    dbPaths.add(path1);
     db2.close();
+    dbPaths.add(path2);
   });
 
-  test('Usage after close()', () async {
-    var db1 = await _openTestDB();
-    db1.close();
+  test('use after close', () async {
+    var path = generateTempPath('close');
+    var db = await RocksDB.openUtf8(path);
+    db.close();
 
-    expect(() => db1.get('SOME KEY'), throwsA(_isClosedError));
-    expect(() => db1.delete('SOME KEY'), throwsA(_isClosedError));
-    expect(() => db1.put('SOME KEY', 'SOME KEY'), throwsA(_isClosedError));
-    expect(() => db1.close(), throwsA(_isClosedError));
+    expect(() => db.get('SOME KEY'), throwsA(_isClosedError));
+    expect(() => db.delete('SOME KEY'), throwsA(_isClosedError));
+    expect(() => db.put('SOME KEY', 'SOME KEY'), throwsA(_isClosedError));
+    expect(() => db.close(), throwsA(_isClosedError));
 
     try {
-      for (var _ in db1.getItems()) {
+      for (var _ in db.getItems()) {
         expect(true, equals(false)); // Should not happen.
       }
     } on RocksClosedError {
       expect(true, equals(true)); // Should happen.
     }
+    dbPaths.add(path);
   });
 
-  test('DB locking throws IOError', () async {
-    var db1 = await _openTestDB();
+  test('locking throws an error', () async {
+    var path = generateTempPath('locking');
+    var db = await RocksDB.openUtf8(path);
     try {
-      await _openTestDB();
+      await RocksDB.openUtf8(path);
       expect(true, equals(false)); // Should not happen. The db is locked.
     } on RocksIOError {
       expect(true, equals(true)); // Should happen.
     } finally {
-      db1.close();
+      db.close();
+      dbPaths.add(path);
     }
   });
 
-  test('Exception inside iteration', () async {
-    var db1 = await _openTestDB();
-    db1.put('a', '1');
-    db1.put('b', '1');
-    db1.put('c', '1');
+  test('throw inside iteration', () async {
+    var path = generateTempPath('bad-iter');
+    var db = await RocksDB.openUtf8(path);
+    db.put('a', '1');
+    db.put('b', '1');
+    db.put('c', '1');
 
     try {
-      for (var _ in db1.getItems()) {
+      for (var _ in db.getItems()) {
         throw Exception('OH NO');
       }
     } catch (e) {
       // Pass
     } finally {
-      db1.close();
+      db.close();
+      dbPaths.add(path);
     }
   });
 
-  test('Test with None encoding', () async {
-    var dbNone =
-        await _openTestDBEnc(RocksDB.identity, RocksDB.identity, shared: true);
-    var dbAscii = await _openTestDBEnc(RocksDB.ascii, RocksDB.ascii,
-        shared: true, clean: false);
-    var dbUtf8 = await _openTestDBEnc(RocksDB.utf8, RocksDB.utf8,
-        shared: true, clean: false);
+  test('key-value encoding', () async {
+    var path = generateTempPath('encoding');
+    var dbNone = await RocksDB.open(path,
+        keyEncoding: RocksDB.identity,
+        valueEncoding: RocksDB.identity,
+        shared: true);
+    var dbAscii = await RocksDB.open(path,
+        keyEncoding: RocksDB.ascii, valueEncoding: RocksDB.ascii, shared: true);
+    var dbUtf8 = await RocksDB.open(path,
+        keyEncoding: RocksDB.utf8, valueEncoding: RocksDB.utf8, shared: true);
     var v = Uint8List.fromList(utf8.encode('key1'));
     dbNone.put(v, v);
 
@@ -229,33 +248,37 @@ void main() {
 
     expect(dbUtf8.get('key1'), null);
     dbUtf8.close();
+    dbPaths.add(path);
   });
 
-  test('Close inside iteration', () async {
-    var db1 = await _openTestDB();
-    db1.put('a', '1');
-    db1.put('b', '1');
+  test('close inside iteration', () async {
+    var path = generateTempPath('close-iter');
+    var db = await RocksDB.openUtf8(path);
+    db.put('a', '1');
+    db.put('b', '1');
 
     var isClosedSeen = false;
 
     try {
-      for (var _ in db1.getItems()) {
-        db1.close();
+      for (var _ in db.getItems()) {
+        db.close();
       }
     } on RocksClosedError catch (_) {
       isClosedSeen = true;
     }
 
     expect(isClosedSeen, equals(true));
+    dbPaths.add(path);
   });
 
-  test('Test no create if missing', () async {
-    var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'does-not-exist');
+  test('no create if missing', () async {
+    var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'notexist');
     expect(RocksDB.openUtf8(tp, createIfMissing: false),
         throwsA(_isInvalidArgumentError));
+    dbPaths.add(tp);
   });
 
-  test('Test error if exists', () async {
+  test('throw error if exists', () async {
     var tp = p.join(Directory.systemTemp.path, 'dart-rocksdb', 'exists');
     var d = Directory(tp);
     await d.create(recursive: true);
@@ -263,15 +286,16 @@ void main() {
     db.close();
     expect(RocksDB.openUtf8(tp, errorIfExists: true),
         throwsA(_isInvalidArgumentError));
+    dbPaths.add(tp);
   });
 
-  test('RocksDB sync iterator', () async {
-    var db = await _openTestDB();
+  test('iteration', () async {
+    var path = generateTempPath('sync-iter');
+    var db = await RocksDB.openUtf8(path);
 
     db.put('k1', 'v');
     db.put('k2', 'v');
 
-    // All keys
     var items1 = db.getItems().toList();
     expect(items1.length, equals(2));
     expect(items1.map((RocksItem<String, String> i) => i.key).toList(),
@@ -327,25 +351,28 @@ void main() {
     expect(item.value.length, longKey.length);
 
     db.close();
+    dbPaths.add(path);
   });
 
-  test('RocksDB sync iterator use after close', () async {
-    var db = await _openTestDB();
+  test('iterator use after close', () async {
+    var path = generateTempPath('after-close');
+    var db = await RocksDB.openUtf8(path);
 
     db.put('k1', 'v');
     db.put('k2', 'v');
 
-    // All keys
     Iterator<RocksItem<String, String>> it = db.getItems().iterator;
     it.moveNext();
 
     db.close();
+    dbPaths.add(path);
 
     expect(() => it.moveNext(), throwsA(_isClosedError));
   });
 
-  test('RocksDB sync iterator current == null', () async {
-    var db = await _openTestDB();
+  test('iterator end current == null', () async {
+    var path = generateTempPath('null-iter');
+    var db = await RocksDB.openUtf8(path);
 
     db.put('k1', 'v');
     var it = db.getItems().iterator;
@@ -360,50 +387,58 @@ void main() {
     expect(it.moveNext(), false);
     expect(it.current, null);
     for (var _ in Iterable<int>.generate(10)) {
-      expect(it.moveNext(),
-          false); // Dart requires that it is safe to call moveNext after the end.
+      // Dart requires that it is safe to call moveNext after the end.
+      expect(it.moveNext(), false);
       expect(it.current, null);
       expect(it.currentKey, null);
       expect(it.currentValue, null);
     }
     db.close();
+    dbPaths.add(path);
   });
 
-  test('Shared db in same isolate', () async {
-    var db = await _openTestDB(shared: true);
-    var db1 = await _openTestDB(shared: true);
+  test('shared instance in one isolate', () async {
+    var path = generateTempPath('shared-isolate');
+    var db1 = await RocksDB.openUtf8(path, shared: true);
+    var db2 = await RocksDB.openUtf8(path, shared: true);
 
-    db.put('k1', 'v');
-    expect(db1.get('k1'), 'v');
+    db1.put('k1', 'v');
+    expect(db2.get('k1'), 'v');
 
-    // Close the 1st reference. It cannot be used now.
-    db.close();
-    expect(() => db.get('SOME KEY'), throwsA(_isClosedError));
-
-    // db1 Should still work.
-    db1.put('k1', 'v2');
-    expect(db1.get('k1'), 'v2');
-
-    // close the 2nd reference. It cannot be used.
+    // close the first reference, it cannot be used now
     db1.close();
     expect(() => db1.get('SOME KEY'), throwsA(_isClosedError));
+
+    // db2 should still work.
+    db2.put('k1', 'v2');
+    expect(db2.get('k1'), 'v2');
+
+    // close the second reference, it cannot be used now
+    db2.close();
+    expect(() => db2.get('SOME KEY'), throwsA(_isClosedError));
+    dbPaths.add(path);
   });
 
-  test('Shared db removed from map', () async {
-    // Test that a shared db is correctly removed from the shared map when closed.
-    var db = await _openTestDB(shared: true);
-    db.close();
+  test('instance removed from map on close', () async {
+    // Test that a shared db is correctly removed from the shared map after it
+    // has been closed.
+    var path = generateTempPath('series');
+    var db1 = await RocksDB.openUtf8(path, shared: true);
+    db1.close();
 
-    // Since the db is closed above it will be remove from the shared map and therefore
-    // this will open a new db and we are allowed to read/write keys.
-    var db1 = await _openTestDB(shared: true);
-    db1.put('k1', 'v');
-    expect(db1.get('k1'), 'v');
+    // Since the db is closed above it will be remove from the shared map and
+    // therefore this will open a new db and we are allowed to read/write keys.
+    var db2 = await RocksDB.openUtf8(path, shared: true);
+    db2.put('k1', 'v');
+    expect(db2.get('k1'), 'v');
+    db2.close();
+    dbPaths.add(path);
   });
 
-  test('Shared db isolates test', () async {
-    // Spawn 2 isolates of which open and close the same shared db a lot in an attempt to find race conditions
-    // in opening and closing the db.
+  test('shared instance multiple isolates', () async {
+    // Spawn multiple isolates which open and close a shared database in an
+    // attempt to find race conditions in opening and closing the database.
+    var path = generateTempPath('parallel');
     Future<Null> run(int index) {
       var completer = Completer<Null>();
       var exitPort = RawReceivePort((dynamic _) {
@@ -412,19 +447,20 @@ void main() {
         }
       });
       var errorPort = RawReceivePort((dynamic v) => completer.completeError(v));
-      Isolate.spawn(_isolateTest, index,
+      Isolate.spawn(_isolateTest, path,
           onExit: exitPort.sendPort, onError: errorPort.sendPort);
       return completer.future;
     }
 
-    await Future.wait(Iterable<int>.generate(2).map(run), eagerError: true);
+    await Future.wait(Iterable<int>.generate(10).map(run), eagerError: true);
+    dbPaths.add(path);
   });
 }
 
 // Must be a top-level because this function runs in another isolate.
-Future<Null> _isolateTest(int v) async {
-  for (var _ in Iterable<int>.generate(1000)) {
-    var db = await _openTestDB(shared: true, clean: false);
+Future<Null> _isolateTest(String path) async {
+  for (var _ in Iterable<int>.generate(200)) {
+    var db = await RocksDB.openUtf8(path, shared: true);
     // Allocate an iterator.
     for (var _ in db.getItems(limit: 2)) {
       // pass

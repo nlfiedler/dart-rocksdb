@@ -1,8 +1,10 @@
 * dart-rocksdb
-** Near Term
-*** TODO unit tests should clean up after themselves
-*** TODO examples should clean up after themselves
 ** Long Term
+*** TODO add support for backward iteration
+*** TODO add support for bulk get/put
+*** TODO add support for column families
+*** TODO add support to get update sequence number
+*** TODO add support for snapshots
 *** TODO will need a release process that bundles the binaries
 **** the =pub= command probably has a means of including binaries
 **** test usage of the package on a bare system (only dart)
@@ -11,11 +13,6 @@
 ***** macos
 ***** ubuntu
 ***** windows
-*** TODO add support for backward iteration
-*** TODO add support for bulk get/put
-*** TODO add support for column families
-*** TODO add support to get update sequence number
-*** TODO add support for snapshots
 *** TODO should include the compression libs as submodules
 **** this would make the build process easier and less system-dependent
 **** see =rust-rocksdb= for example of submodules and build process
