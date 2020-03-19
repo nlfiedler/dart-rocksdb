@@ -1,5 +1,5 @@
 name: rocksdb
-description: Dart bindings for the RocksDB key-value store.
+description: Library providing Dart language bindings for the RocksDB key-value store.
 version: 0.1.0
 author: Nathan Fiedler <nathanfiedler@fastmail.fm>
 homepage: https://github.com/nlfiedler/dart-rocksdb
